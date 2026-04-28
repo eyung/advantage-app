@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: #F1F8E9;
+    color: #1A1A1A;
+    min-height: 100dvh;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .court-bg {
+    background-color: #F1F8E9;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 59px,
+        rgba(46,125,50,0.08) 59px,
+        rgba(46,125,50,0.08) 60px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 59px,
+        rgba(46,125,50,0.08) 59px,
+        rgba(46,125,50,0.08) 60px
+      );
+  }
+
+  .page-container {
+    @apply max-w-lg mx-auto px-4 pb-24 pt-4;
+  }
+
+  .nav-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}

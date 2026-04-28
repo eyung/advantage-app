@@ -1,0 +1,82 @@
+export function getTodayISO(): string {
+  return new Date().toISOString().split('T')[0]!;
+}
+
+export function getISOWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
+export function getISOYear(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  return d.getUTCFullYear();
+}
+
+export function getISOWeekForDate(date: Date): string {
+  const week = getISOWeekNumber(date);
+  const year = getISOYear(date);
+  return `${year}-W${String(week).padStart(2, '0')}`;
+}
+
+export function getCurrentISOWeek(): string {
+  return getISOWeekForDate(new Date());
+}
+
+/** 0 = Monday … 6 = Sunday */
+export function getDayOfWeekIndex(date: Date): number {
+  return (date.getDay() + 6) % 7;
+}
+
+export function formatDisplayDate(iso: string): string {
+  const date = new Date(iso + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+export function formatShortDate(iso: string): string {
+  const date = new Date(iso + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+export function getWeekStartISO(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split('T')[0]!;
+}
+
+/** Returns ISO dates for the 7 days of the week containing `date`, Mon–Sun */
+export function getWeekDates(date: Date): string[] {
+  const monday = new Date(date);
+  const day = monday.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  monday.setDate(monday.getDate() + diff);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d.toISOString().split('T')[0]!;
+  });
+}
+
+/** Past N weeks including the current one, most recent last */
+export function getPastWeekStarts(n: number): string[] {
+  const today = new Date();
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (n - 1 - i) * 7);
+    return getWeekStartISO(d);
+  });
+}
+
+/** Past N ISO week strings including current week, oldest first */
+export function getPastISOWeeks(n: number): string[] {
+  const today = new Date();
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (n - 1 - i) * 7);
+    return getISOWeekForDate(d);
+  });
+}
