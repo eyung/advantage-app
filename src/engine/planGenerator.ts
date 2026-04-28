@@ -1,5 +1,15 @@
-import type { EquipmentProfile, WeeklyPlan, DayPlan, PlannedExercise, DayOfWeek, TennisCategory } from '../types';
-import exercises, { exerciseMap } from '../data/exercises';
+import type {
+  EquipmentProfile,
+  WeeklyPlan,
+  DayPlan,
+  PlannedExercise,
+  DayOfWeek,
+  TennisCategory,
+  Exercise,
+  CustomisationProfile,
+  CustomExercise,
+} from '../types';
+import exercises, { getExerciseLibrary, exerciseMap } from '../data/exercises';
 import { assignWeight } from './weightAssigner';
 import { getCurrentISOWeek } from '../utils/dateUtils';
 
@@ -47,23 +57,51 @@ function parseWeekNumber(weekISO: string): number {
   return match ? parseInt(match[1]!, 10) : 1;
 }
 
-function buildTrainingDay(
+/**
+ * Builds the eligible exercise pool filtered by exclusions and blocked categories.
+ * Empty category buckets are filled from the overflow of all non-empty buckets.
+ */
+export function buildEligiblePool(
+  allExercises: Exercise[],
+  customisation: CustomisationProfile
+): Record<TennisCategory, Exercise[]> {
+  const excludedSet = new Set(customisation.excludedExerciseIds);
+  const blockedSet = new Set(customisation.blockedCategories);
+
+  const pool = {} as Record<TennisCategory, Exercise[]>;
+  for (const cat of ALL_CATEGORIES) {
+    if (blockedSet.has(cat)) {
+      pool[cat] = [];
+    } else {
+      pool[cat] = allExercises.filter((e) => e.category === cat && !excludedSet.has(e.id));
+    }
+  }
+
+  // Build overflow from all non-empty buckets for gap filling
+  const overflow: Exercise[] = ALL_CATEGORIES.flatMap((cat) => pool[cat]);
+
+  for (const cat of ALL_CATEGORIES) {
+    if (pool[cat].length === 0 && overflow.length > 0) {
+      pool[cat] = overflow;
+    }
+  }
+
+  return pool;
+}
+
+/**
+ * Builds a full training day from an eligible pool (replaces the original buildTrainingDay).
+ */
+export function buildTrainingDayFromPool(
   rand: () => number,
+  pool: Record<TennisCategory, Exercise[]>,
   profile: EquipmentProfile
 ): DayPlan {
-  // One exercise per category (ensures all 5 categories covered)
   const shuffledCategories = shuffle(rand, ALL_CATEGORIES);
-  const exercisesByCategory: Record<TennisCategory, typeof exercises> = {
-    'lateral-agility': exercises.filter((e) => e.category === 'lateral-agility'),
-    'rotational-power': exercises.filter((e) => e.category === 'rotational-power'),
-    'shoulder-stability': exercises.filter((e) => e.category === 'shoulder-stability'),
-    'hiit-stamina': exercises.filter((e) => e.category === 'hiit-stamina'),
-    'general-strength': exercises.filter((e) => e.category === 'general-strength'),
-  };
 
   const planned: PlannedExercise[] = shuffledCategories.map((cat) => {
-    const pool = exercisesByCategory[cat];
-    const exercise = randChoice(rand, pool);
+    const categoryPool = pool[cat];
+    const exercise = randChoice(rand, categoryPool.length > 0 ? categoryPool : exercises);
     const setsVariance = randInt(rand, -1, 1);
     const repsVariance = randInt(rand, -2, 2);
     return {
@@ -79,10 +117,50 @@ function buildTrainingDay(
 }
 
 /**
- * Generates a deterministic weekly plan.
- * Same profile.configVersion + same weekISO always produces the same plan.
+ * Regenerates only the incomplete slots of an existing day.
+ * Completed exercises (by ID) are preserved; the rest are replaced from the pool.
+ * Uses a slot-indexed seed: customisationVersion * 100000 + dayIndex * 1000 + slotIndex
  */
-export function generateWeeklyPlan(profile: EquipmentProfile, weekISO: string): WeeklyPlan {
+export function buildSlotsFromPool(
+  customisationVersion: number,
+  dayIndex: number,
+  pool: Record<TennisCategory, Exercise[]>,
+  profile: EquipmentProfile,
+  existingDay: DayPlan,
+  completedIds: Set<string>
+): DayPlan {
+  const updatedExercises = existingDay.exercises.map((pe, slotIndex) => {
+    if (completedIds.has(pe.exerciseId)) return pe;
+
+    const seed = (customisationVersion * 100000 + dayIndex * 1000 + slotIndex) >>> 0;
+    const rand = mulberry32(seed);
+    const categoryPool = pool[pe.category];
+    const exercise = randChoice(rand, categoryPool.length > 0 ? categoryPool : exercises);
+    const setsVariance = randInt(rand, -1, 1);
+    const repsVariance = randInt(rand, -2, 2);
+    return {
+      exerciseId: exercise.id,
+      category: pe.category,
+      sets: Math.max(2, Math.min(5, exercise.defaultSets + setsVariance)),
+      reps: Math.max(6, Math.min(20, exercise.defaultReps + repsVariance)),
+      weightKg: assignWeight(exercise, profile.dumbbellWeights),
+    };
+  });
+
+  return { isTrainingDay: true, exercises: updatedExercises };
+}
+
+/**
+ * Generates a deterministic weekly plan.
+ * Accepts optional customisation to filter the eligible exercise pool.
+ * Same profile.configVersion + same weekISO + same customisation always produces the same plan.
+ */
+export function generateWeeklyPlan(
+  profile: EquipmentProfile,
+  weekISO: string,
+  customisation?: CustomisationProfile,
+  customExercises?: CustomExercise[]
+): WeeklyPlan {
   if (profile.dumbbellWeights.length === 0) {
     throw new InvalidProfileError('dumbbellWeights must not be empty');
   }
@@ -94,12 +172,17 @@ export function generateWeeklyPlan(profile: EquipmentProfile, weekISO: string): 
   const seed = profile.configVersion * 10000 + weekNum;
   const rand = mulberry32(seed);
 
+  const allExercises = customExercises ? getExerciseLibrary(customExercises) : exercises;
+  const pool = customisation
+    ? buildEligiblePool(allExercises, customisation)
+    : buildEligiblePool(allExercises, { excludedExerciseIds: [], blockedCategories: [], customisationVersion: 0 });
+
   const trainingSet = new Set(profile.trainingDays);
   const days = {} as Record<DayOfWeek, DayPlan>;
 
   for (const day of ALL_DAYS) {
     if (trainingSet.has(day)) {
-      days[day] = buildTrainingDay(rand, profile);
+      days[day] = buildTrainingDayFromPool(rand, pool, profile);
     } else {
       days[day] = { isTrainingDay: false, exercises: [] };
     }

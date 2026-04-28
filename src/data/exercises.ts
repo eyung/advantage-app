@@ -1,4 +1,4 @@
-import type { Exercise } from '../types';
+import type { Exercise, TennisCategory, CustomExercise } from '../types';
 
 const exercises: Exercise[] = [
   // ─── Lateral Agility ───────────────────────────────────────────────────────
@@ -467,3 +467,23 @@ export default exercises;
 export const exerciseMap: Record<string, Exercise> = Object.fromEntries(
   exercises.map((e) => [e.id, e])
 );
+
+export const CATEGORY_DEFAULTS: Record<
+  TennisCategory,
+  {
+    primaryMuscleGroup: Exercise['primaryMuscleGroup'];
+    defaultSets: number;
+    defaultReps: number;
+    equipment: 'dumbbell';
+  }
+> = {
+  'lateral-agility':    { primaryMuscleGroup: 'legs',      defaultSets: 3, defaultReps: 12, equipment: 'dumbbell' },
+  'rotational-power':   { primaryMuscleGroup: 'core',      defaultSets: 3, defaultReps: 12, equipment: 'dumbbell' },
+  'shoulder-stability': { primaryMuscleGroup: 'shoulders', defaultSets: 3, defaultReps: 12, equipment: 'dumbbell' },
+  'hiit-stamina':       { primaryMuscleGroup: 'full-body', defaultSets: 4, defaultReps: 12, equipment: 'dumbbell' },
+  'general-strength':   { primaryMuscleGroup: 'full-body', defaultSets: 3, defaultReps: 10, equipment: 'dumbbell' },
+};
+
+export function getExerciseLibrary(customExercises: CustomExercise[]): Exercise[] {
+  return [...exercises, ...customExercises];
+}

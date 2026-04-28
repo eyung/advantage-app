@@ -43,6 +43,23 @@ export interface WeeklyPlan {
   days: Record<DayOfWeek, DayPlan>;
 }
 
+export interface CustomExercise {
+  id: string;
+  name: string;
+  category: TennisCategory;
+  equipment: 'dumbbell' | 'bodyweight';
+  primaryMuscleGroup: Exercise['primaryMuscleGroup'];
+  defaultSets: number;
+  defaultReps: number;
+  createdAt: string;
+}
+
+export interface CustomisationProfile {
+  excludedExerciseIds: string[];
+  blockedCategories: TennisCategory[];
+  customisationVersion: number;
+}
+
 export interface ExerciseCompletion {
   id: string;
   exerciseId: string;

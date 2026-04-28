@@ -1,6 +1,7 @@
 import { Icon } from '../ui/Icon';
 import type { PlannedExercise, TennisCategory } from '../../types';
 import { exerciseMap } from '../../data/exercises';
+import { useCustomisationStore } from '../../store/customisationStore';
 
 const CATEGORY_META: Record<TennisCategory, { label: string; color: string }> = {
   'lateral-agility':    { label: 'Lateral Agility',    color: '#3e7d56' },
@@ -17,9 +18,27 @@ interface Props {
 }
 
 export function ExerciseCard({ exercise, completed, onToggle }: Props) {
-  const name = exerciseMap[exercise.exerciseId]?.name ?? exercise.exerciseId;
+  const allExercises = useCustomisationStore((s) => s.customExercises);
+  const isExcluded = useCustomisationStore((s) => s.isExcluded);
+  const excludeExercise = useCustomisationStore((s) => s.excludeExercise);
+  const includeExercise = useCustomisationStore((s) => s.includeExercise);
+
+  const builtInName = exerciseMap[exercise.exerciseId]?.name;
+  const customName = allExercises.find((e) => e.id === exercise.exerciseId)?.name;
+  const name = builtInName ?? customName ?? exercise.exerciseId;
+
   const cat = CATEGORY_META[exercise.category];
   const weightLabel = exercise.weightKg === 0 ? 'Bodyweight' : `${exercise.weightKg} kg`;
+  const excluded = isExcluded(exercise.exerciseId);
+
+  function handleExcludeToggle(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (excluded) {
+      includeExercise(exercise.exerciseId);
+    } else {
+      excludeExercise(exercise.exerciseId);
+    }
+  }
 
   return (
     <div
@@ -31,6 +50,7 @@ export function ExerciseCard({ exercise, completed, onToggle }: Props) {
           ? 'var(--shadow-card), inset 3px 0 0 var(--brand)'
           : 'var(--shadow-card)',
         transition: 'all 200ms cubic-bezier(0.2,0,0,1)',
+        opacity: excluded && !completed ? 0.6 : 1,
       }}
     >
       <div
@@ -42,7 +62,7 @@ export function ExerciseCard({ exercise, completed, onToggle }: Props) {
           marginBottom: 12,
         }}
       >
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div
             style={{
               fontFamily: 'var(--font-sans)',
@@ -55,6 +75,18 @@ export function ExerciseCard({ exercise, completed, onToggle }: Props) {
           >
             {name}
           </div>
+          {excluded && !completed && (
+            <div
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontSize: 11,
+                color: 'var(--fg-tertiary)',
+                marginTop: 2,
+              }}
+            >
+              Excluded — won't appear next time
+            </div>
+          )}
           <div style={{ marginTop: 6 }}>
             <span
               style={{
@@ -75,26 +107,49 @@ export function ExerciseCard({ exercise, completed, onToggle }: Props) {
             </span>
           </div>
         </div>
-        {completed && (
-          <span
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={handleExcludeToggle}
+            aria-label={excluded ? 'Re-include exercise' : 'Exclude exercise'}
             style={{
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
-              gap: 4,
-              padding: '4px 9px',
-              borderRadius: 999,
-              background: 'var(--color-success)',
-              color: 'white',
-              fontFamily: 'var(--font-sans)',
-              fontSize: 11,
-              fontWeight: 600,
-              flexShrink: 0,
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              border: 'none',
+              borderRadius: '50%',
+              background: 'transparent',
+              cursor: 'pointer',
+              color: excluded ? 'var(--brand)' : 'var(--fg-tertiary)',
+              padding: 0,
             }}
           >
-            <Icon name="check" size={12} style={{ filter: 'brightness(0) invert(1)' }} />
-            Done
-          </span>
-        )}
+            <Icon name={excluded ? 'plus' : 'x'} size={14} />
+          </button>
+
+          {completed && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '4px 9px',
+                borderRadius: 999,
+                background: 'var(--color-success)',
+                color: 'white',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              <Icon name="check" size={12} style={{ filter: 'brightness(0) invert(1)' }} />
+              Done
+            </span>
+          )}
+        </div>
       </div>
 
       <div

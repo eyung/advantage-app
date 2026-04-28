@@ -87,6 +87,79 @@ export function DayRoutineView({ dayPlan, dayLabel, focused, isCompleted, onTogg
     );
   }
 
+  // Empty pool state: training day has no exercises due to exclusions/blocks (FR-008)
+  if (dayPlan.exercises.length === 0) {
+    return (
+      <div
+        style={{
+          background: 'var(--bg-surface)',
+          borderRadius: 24,
+          padding: 24,
+          marginBottom: 14,
+          boxShadow: 'var(--shadow-card)',
+          textAlign: 'center',
+          opacity,
+          transition,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: focused ? 'var(--brand)' : 'var(--fg-tertiary)',
+            }}
+          >
+            {dayLabel}{focused ? ' · Today' : ''}
+          </span>
+        </div>
+        <div
+          style={{
+            padding: '20px 0',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 10,
+          }}
+        >
+          <Icon name="spark" size={28} style={{ opacity: 0.5 }} />
+          <p
+            style={{
+              margin: 0,
+              fontFamily: 'var(--font-display)',
+              fontSize: 16,
+              fontWeight: 600,
+              color: 'var(--fg-primary)',
+            }}
+          >
+            No exercises available
+          </p>
+          <p
+            style={{
+              margin: 0,
+              fontFamily: 'var(--font-sans)',
+              fontSize: 13,
+              color: 'var(--fg-tertiary)',
+              maxWidth: 260,
+            }}
+          >
+            All exercises are excluded. Visit Settings → Exercise Management to restore some.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const total = dayPlan.exercises.length;
   const done = dayPlan.exercises.filter((e) => isCompleted(e.exerciseId)).length;
 

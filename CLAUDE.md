@@ -1,5 +1,5 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/003-ui-design-implementation/plan.md`
+at `specs/004-exercise-customisation/plan.md`
 <!-- SPECKIT END -->
