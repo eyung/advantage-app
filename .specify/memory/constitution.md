@@ -66,8 +66,7 @@ constraints are non-negotiable for this project:
   locally with a single command (e.g., `npm run dev`)
 - **Dependencies**: Prefer well-maintained, small-footprint libraries. No dependency that
   requires a build-time or runtime server is permitted
-- **Styling**: Tennis-themed design system (court green `#4CAF50` / `#2E7D32`, clay orange
-  `#E65100` / `#FF6F00`, bright white `#FAFAFA`) MUST be applied consistently across all screens
+- **Styling**: Advantage Design System — Deep Forest Green (`#245236` / `var(--brand)`), Cool Slate Gray neutrals, Off-White Bone canvas (`#f7f5ee` / `var(--bg-app)`) MUST be applied consistently across all screens. All iconography uses the SVG stroke icon set in `public/icons/`; emoji are not permitted in UI. Full token reference: `src/index.css`
 - **No authentication**: There is one user (the owner). Login screens, accounts, and
   multi-user features are out of scope
 
@@ -98,4 +97,4 @@ require:
 
 All implementation plans MUST include a Constitution Check gate before Phase 0 research.
 
-**Version**: 1.0.0 | **Ratified**: 2026-04-27 | **Last Amended**: 2026-04-27
+**Version**: 1.0.1 | **Ratified**: 2026-04-27 | **Last Amended**: 2026-04-28

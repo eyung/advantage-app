@@ -1,3 +1,5 @@
+import { Icon } from '../ui/Icon';
+
 interface Props {
   completed: boolean;
 }
@@ -7,9 +9,21 @@ export function CompletionBadge({ completed }: Props) {
   return (
     <span
       aria-label="Completed"
-      className="inline-flex items-center gap-1 rounded-full bg-court-green px-2 py-0.5 text-xs font-semibold text-white"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '4px 9px',
+        borderRadius: 999,
+        background: 'var(--color-success)',
+        color: 'white',
+        fontFamily: 'var(--font-sans)',
+        fontSize: 11,
+        fontWeight: 600,
+      }}
     >
-      ✓ Done
+      <Icon name="check" size={12} style={{ filter: 'brightness(0) invert(1)' }} />
+      Done
     </span>
   );
 }

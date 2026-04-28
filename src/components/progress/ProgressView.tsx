@@ -1,8 +1,19 @@
 import { PersonalBestList } from './PersonalBestList';
 import { ConsistencyChart } from './ConsistencyChart';
+import { Icon } from '../ui/Icon';
 import { useCompletionStore } from '../../store/completionStore';
 import { useEquipmentStore } from '../../store/equipmentStore';
 import { getCurrentISOWeek } from '../../utils/dateUtils';
+
+const eyebrow: React.CSSProperties = {
+  fontFamily: 'var(--font-sans)',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: 'var(--fg-tertiary)',
+  margin: '0 0 10px 4px',
+};
 
 export function ProgressView() {
   const allCompletions = useCompletionStore((s) => s.completions);
@@ -17,10 +28,27 @@ export function ProgressView() {
 
   if (isEmpty) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-6 text-center space-y-4">
-        <div className="text-6xl">🎾</div>
-        <h2 className="text-xl font-bold text-gray-800">No history yet</h2>
-        <p className="text-sm text-gray-500 max-w-xs leading-relaxed">
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '80px 24px',
+          textAlign: 'center',
+          gap: 16,
+        }}
+      >
+        <Icon name="chart" size={48} style={{ opacity: 0.2 }} />
+        <p
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 14,
+            color: 'var(--fg-tertiary)',
+            maxWidth: 260,
+            margin: 0,
+          }}
+        >
           Complete your first training session and your progress will start tracking here.
         </p>
       </div>
@@ -28,30 +56,78 @@ export function ProgressView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* This week summary */}
-      <div className="bg-white rounded-2xl shadow-card p-4 flex items-center justify-between">
+      <div
+        style={{
+          background: 'var(--bg-surface)',
+          borderRadius: 24,
+          padding: 20,
+          boxShadow: 'var(--shadow-card)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <div>
-          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">This Week</p>
-          <p className="text-2xl font-bold text-gray-900">
+          <div style={{ ...eyebrow, margin: 0, marginBottom: 6 }}>This week</div>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 40,
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
+              color: 'var(--fg-primary)',
+              lineHeight: 1,
+            }}
+          >
             {completedThisWeek}
-            <span className="text-base font-normal text-gray-400"> / {plannedThisWeek} sessions</span>
-          </p>
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 18,
+                fontWeight: 400,
+                color: 'var(--fg-tertiary)',
+                marginLeft: 4,
+              }}
+            >
+              / {plannedThisWeek} sessions
+            </span>
+          </div>
         </div>
-        <div className="text-3xl">{completedThisWeek >= plannedThisWeek && plannedThisWeek > 0 ? '🏆' : '💪'}</div>
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--brand-soft)',
+            borderRadius: '50%',
+          }}
+        >
+          <Icon name="bolt" size={22} />
+        </div>
       </div>
 
       {/* Consistency chart */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-bold text-gray-700 px-1">Weekly Consistency</h3>
-        <div className="bg-white rounded-2xl shadow-card p-4">
+      <section>
+        <h3 style={eyebrow}>Weekly consistency</h3>
+        <div
+          style={{
+            background: 'var(--bg-surface)',
+            borderRadius: 24,
+            padding: 20,
+            boxShadow: 'var(--shadow-card)',
+          }}
+        >
           <ConsistencyChart />
         </div>
       </section>
 
       {/* Personal bests */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-bold text-gray-700 px-1">Personal Bests</h3>
+      <section>
+        <h3 style={eyebrow}>Personal bests</h3>
         <PersonalBestList />
       </section>
     </div>
