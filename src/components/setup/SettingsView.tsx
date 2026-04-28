@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DumbbellInput } from './DumbbellInput';
 import { DaySelector } from './DaySelector';
 import { Icon } from '../ui/Icon';
+import { ExerciseManagement } from '../settings/ExerciseManagement';
 import { useEquipment } from '../../hooks/useEquipment';
 import type { DayOfWeek } from '../../types';
 
@@ -14,6 +15,7 @@ export function SettingsView({ onClose }: Props) {
   const [weights, setWeights] = useState<number[]>(profile?.dumbbellWeights ?? []);
   const [days, setDays] = useState<DayOfWeek[]>(profile?.trainingDays ?? []);
   const [saved, setSaved] = useState(false);
+  const [showExerciseManagement, setShowExerciseManagement] = useState(false);
 
   const canSave = weights.length >= 1 && days.length >= 3 && days.length <= 6;
 
@@ -25,6 +27,10 @@ export function SettingsView({ onClose }: Props) {
       setSaved(false);
       onClose();
     }, 800);
+  }
+
+  if (showExerciseManagement) {
+    return <ExerciseManagement onBack={() => setShowExerciseManagement(false)} />;
   }
 
   return (
@@ -106,6 +112,40 @@ export function SettingsView({ onClose }: Props) {
         >
           Changing your configuration will regenerate your weekly plan. Your completion history is always preserved.
         </p>
+
+        {/* Exercise Management link */}
+        <button
+          type="button"
+          onClick={() => setShowExerciseManagement(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            padding: '16px 18px',
+            borderRadius: 18,
+            border: 'none',
+            background: 'var(--bg-surface)',
+            boxShadow: 'var(--shadow-card)',
+            cursor: 'pointer',
+            marginBottom: 14,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Icon name="dumbbell" size={20} />
+            <span
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontSize: 15,
+                fontWeight: 600,
+                color: 'var(--fg-primary)',
+              }}
+            >
+              Exercise Management
+            </span>
+          </div>
+          <Icon name="chevron-right" size={18} />
+        </button>
 
         <button
           type="button"

@@ -71,6 +71,26 @@ export function getPastWeekStarts(n: number): string[] {
   });
 }
 
+/**
+ * Returns the ISO date string (YYYY-MM-DD) for a given DayOfWeek within a weekISO string.
+ * DayOfWeek index: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
+ */
+export function getWeekDayISO(weekISO: string, dayIndex: number): string {
+  // Parse year and week number from e.g. "2026-W18"
+  const match = weekISO.match(/^(\d{4})-W(\d{2})$/);
+  if (!match) return '';
+  const year = parseInt(match[1]!, 10);
+  const week = parseInt(match[2]!, 10);
+  // ISO week 1 Monday: Jan 4 always falls in week 1; find Monday of week 1
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const mondayOfWeek1 = new Date(jan4);
+  mondayOfWeek1.setUTCDate(jan4.getUTCDate() - ((jan4.getUTCDay() + 6) % 7));
+  // Add weeks and days
+  const target = new Date(mondayOfWeek1);
+  target.setUTCDate(mondayOfWeek1.getUTCDate() + (week - 1) * 7 + dayIndex);
+  return target.toISOString().split('T')[0]!;
+}
+
 /** Past N ISO week strings including current week, oldest first */
 export function getPastISOWeeks(n: number): string[] {
   const today = new Date();

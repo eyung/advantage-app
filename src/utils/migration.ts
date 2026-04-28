@@ -5,9 +5,22 @@ type MigrationFn = (data: RawData) => RawData;
 
 const migrations: Record<number, MigrationFn> = {
   1: (data) => {
-    // Baseline: ensure advantage_completions exists
     if (!data[KEYS.completions]) {
       data[KEYS.completions] = JSON.stringify([]);
+    }
+    return data;
+  },
+  2: (data) => {
+    if (!data[KEYS.customisation]) {
+      data[KEYS.customisation] = JSON.stringify({
+        state: {
+          excludedExerciseIds: [],
+          blockedCategories: [],
+          customExercises: [],
+          customisationVersion: 0,
+        },
+        version: 0,
+      });
     }
     return data;
   },
