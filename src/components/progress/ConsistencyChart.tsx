@@ -4,8 +4,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { useCompletionStore } from '../../store/completionStore';
@@ -23,7 +21,7 @@ export function ConsistencyChart() {
     const completedDays = new Set(
       completions.filter((c) => c.weekISO === weekISO).map((c) => c.date)
     ).size;
-    const label = weekISO.replace(/\d{4}-/, ''); // show "W17"
+    const label = weekISO.replace(/\d{4}-/, '');
     return { week: label, Completed: completedDays, Planned: plannedPerWeek };
   });
 
@@ -31,23 +29,39 @@ export function ConsistencyChart() {
 
   if (!hasData) {
     return (
-      <div className="text-center py-8 space-y-2">
-        <div className="text-4xl">📊</div>
-        <p className="text-sm text-gray-500">Your weekly consistency will appear here once you start logging</p>
+      <div style={{ textAlign: 'center', padding: '32px 0' }}>
+        <p
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 13,
+            color: 'var(--fg-tertiary)',
+            margin: 0,
+          }}
+        >
+          Your weekly consistency will appear here once you start logging
+        </p>
       </div>
     );
   }
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={140}>
       <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-        <XAxis dataKey="week" tick={{ fontSize: 11 }} />
-        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-        <Tooltip />
-        <Legend wrapperStyle={{ fontSize: 11 }} />
-        <Bar dataKey="Planned" fill="#E8F5E9" radius={[3, 3, 0, 0]} />
-        <Bar dataKey="Completed" fill="#4CAF50" radius={[3, 3, 0, 0]} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-hairline)" vertical={false} />
+        <XAxis
+          dataKey="week"
+          tick={{ fontSize: 10, fontFamily: 'var(--font-mono)', fill: 'var(--fg-tertiary)' }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <YAxis
+          allowDecimals={false}
+          tick={{ fontSize: 10, fontFamily: 'var(--font-mono)', fill: 'var(--fg-tertiary)' }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <Bar dataKey="Planned" fill="var(--color-forest-200)" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="Completed" fill="var(--brand)" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

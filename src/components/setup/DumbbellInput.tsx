@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Icon } from '../ui/Icon';
 
 interface Props {
   weights: number[];
@@ -19,14 +20,9 @@ export function DumbbellInput({ weights, onChange }: Props) {
       setError(`${val} kg is already in your list`);
       return;
     }
-    const sorted = [...weights, val].sort((a, b) => a - b);
-    onChange(sorted);
+    onChange([...weights, val].sort((a, b) => a - b));
     setInputValue('');
     setError('');
-  }
-
-  function handleRemove(w: number) {
-    onChange(weights.filter((x) => x !== w));
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -34,12 +30,19 @@ export function DumbbellInput({ weights, onChange }: Props) {
   }
 
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-semibold text-gray-700">
-        Available Dumbbell Weights (kg)
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <label
+        style={{
+          fontFamily: 'var(--font-sans)',
+          fontSize: 13,
+          fontWeight: 600,
+          color: 'var(--fg-primary)',
+        }}
+      >
+        Available dumbbell weights (kg)
       </label>
 
-      <div className="flex gap-2">
+      <div style={{ display: 'flex', gap: 8 }}>
         <input
           type="number"
           min="0.5"
@@ -48,36 +51,83 @@ export function DumbbellInput({ weights, onChange }: Props) {
           onChange={(e) => { setInputValue(e.target.value); setError(''); }}
           onKeyDown={handleKeyDown}
           placeholder="e.g. 10"
-          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-court-green"
+          style={{
+            flex: 1,
+            padding: '10px 12px',
+            borderRadius: 8,
+            border: '1px solid var(--border-default)',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 15,
+            outline: 'none',
+            background: 'var(--bg-surface)',
+            color: 'var(--fg-primary)',
+          }}
         />
         <button
           type="button"
           onClick={handleAdd}
-          className="rounded-lg bg-court-green px-4 py-2 text-sm font-semibold text-white hover:bg-court-green-dark active:scale-95 transition-transform"
+          style={{
+            padding: '10px 18px',
+            borderRadius: 12,
+            border: 'none',
+            cursor: 'pointer',
+            background: 'var(--brand)',
+            color: 'white',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 15,
+            fontWeight: 600,
+            boxShadow: 'var(--shadow-sm)',
+            transition: 'all 200ms cubic-bezier(0.2,0,0,1)',
+          }}
         >
           Add
         </button>
       </div>
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && (
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: '#a23a3a', margin: 0 }}>
+          {error}
+        </p>
+      )}
 
       {weights.length === 0 ? (
-        <p className="text-xs text-gray-400">No weights added yet — add at least one</p>
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--fg-muted)', margin: 0 }}>
+          No weights added yet — add at least one
+        </p>
       ) : (
-        <div className="flex flex-wrap gap-2">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {weights.map((w) => (
             <span
               key={w}
-              className="flex items-center gap-1 rounded-full bg-court-green-faint px-3 py-1 text-sm font-medium text-court-green-dark"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '5px 10px',
+                borderRadius: 999,
+                background: 'var(--brand-soft)',
+                color: 'var(--color-forest-800)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 13,
+                fontWeight: 600,
+              }}
             >
               {w} kg
               <button
                 type="button"
-                onClick={() => handleRemove(w)}
+                onClick={() => onChange(weights.filter((x) => x !== w))}
                 aria-label={`Remove ${w} kg`}
-                className="ml-1 text-court-green-dark hover:text-red-500 leading-none"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  marginLeft: 2,
+                  color: 'var(--color-forest-800)',
+                  display: 'inline-flex',
+                }}
               >
-                ×
+                <Icon name="x" size={12} />
               </button>
             </span>
           ))}

@@ -11,7 +11,14 @@ interface Props {
 
 export function DayTabBar({ plan, selectedDay, onSelectDay, completedCounts }: Props) {
   return (
-    <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-100 bg-white">
+    <div
+      className="grid flex-shrink-0"
+      style={{
+        gridTemplateColumns: 'repeat(7, 1fr)',
+        background: 'var(--bg-surface)',
+        borderBottom: '1px solid var(--border-hairline)',
+      }}
+    >
       {ALL_DAYS.map((day) => {
         const dayPlan = plan.days[day];
         const isTraining = dayPlan.isTrainingDay;
@@ -25,25 +32,57 @@ export function DayTabBar({ plan, selectedDay, onSelectDay, completedCounts }: P
             key={day}
             type="button"
             onClick={() => onSelectDay(day)}
-            className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-4 py-3 text-xs font-semibold transition-colors relative ${
-              isSelected
-                ? 'text-clay border-b-2 border-clay -mb-px'
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className="flex flex-col items-center"
+            style={{
+              padding: '12px 4px 10px',
+              gap: 3,
+              background: 'transparent',
+              border: 'none',
+              borderBottom: isSelected ? '2px solid var(--brand)' : '2px solid transparent',
+              cursor: 'pointer',
+              marginBottom: -1,
+            }}
           >
-            <span>{day}</span>
+            <span
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontSize: 12,
+                fontWeight: 600,
+                color: isSelected ? 'var(--fg-primary)' : 'var(--fg-tertiary)',
+              }}
+            >
+              {day}
+            </span>
             {isTraining ? (
               <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                  allDone
-                    ? 'bg-court-green text-white'
-                    : 'bg-gray-100 text-gray-500'
-                }`}
+                style={{
+                  minWidth: 20,
+                  height: 18,
+                  padding: '0 6px',
+                  borderRadius: 999,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: allDone ? 'var(--color-success)' : 'var(--color-slate-100)',
+                  color: allDone ? 'white' : 'var(--fg-secondary)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 600,
+                }}
               >
                 {allDone ? '✓' : exerciseCount}
               </span>
             ) : (
-              <span className="text-[10px] text-gray-300">rest</span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 10,
+                  color: 'var(--fg-muted)',
+                  fontStyle: 'italic',
+                }}
+              >
+                rest
+              </span>
             )}
           </button>
         );

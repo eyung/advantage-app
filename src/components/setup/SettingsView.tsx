@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DumbbellInput } from './DumbbellInput';
 import { DaySelector } from './DaySelector';
+import { Icon } from '../ui/Icon';
 import { useEquipment } from '../../hooks/useEquipment';
 import type { DayOfWeek } from '../../types';
 
@@ -27,30 +28,82 @@ export function SettingsView({ onClose }: Props) {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm px-4 py-3 flex items-center gap-3">
+    <div className="min-h-dvh flex flex-col" style={{ background: 'var(--bg-app)' }}>
+      <header
+        className="flex items-center gap-2 flex-shrink-0"
+        style={{
+          height: 56,
+          padding: '0 8px 0 4px',
+          background: 'var(--bg-surface)',
+          borderBottom: '1px solid var(--border-hairline)',
+        }}
+      >
         <button
           type="button"
           onClick={onClose}
           aria-label="Back"
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 text-lg leading-none"
+          className="flex items-center justify-center rounded-full"
+          style={{
+            width: 40,
+            height: 40,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--fg-secondary)',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
         >
-          ←
+          <Icon name="chevron-left" size={20} />
         </button>
-        <h1 className="font-bold text-gray-900 text-lg">Settings</h1>
+        <h1
+          style={{
+            margin: 0,
+            fontFamily: 'var(--font-display)',
+            fontSize: 19,
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
+            color: 'var(--fg-primary)',
+          }}
+        >
+          Settings
+        </h1>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <div className="bg-white rounded-2xl shadow-card p-5">
+      <div className="flex-1 overflow-y-auto" style={{ padding: 16 }}>
+        <div
+          style={{
+            background: 'var(--bg-surface)',
+            borderRadius: 18,
+            padding: 18,
+            boxShadow: 'var(--shadow-card)',
+            marginBottom: 14,
+          }}
+        >
           <DumbbellInput weights={weights} onChange={setWeights} />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-card p-5">
+        <div
+          style={{
+            background: 'var(--bg-surface)',
+            borderRadius: 18,
+            padding: 18,
+            boxShadow: 'var(--shadow-card)',
+            marginBottom: 14,
+          }}
+        >
           <DaySelector selected={days} onChange={setDays} />
         </div>
 
-        <p className="text-xs text-gray-400 text-center px-2">
+        <p
+          style={{
+            textAlign: 'center',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 12,
+            color: 'var(--fg-tertiary)',
+            margin: '8px 12px 16px',
+          }}
+        >
           Changing your configuration will regenerate your weekly plan. Your completion history is always preserved.
         </p>
 
@@ -58,15 +111,25 @@ export function SettingsView({ onClose }: Props) {
           type="button"
           disabled={!canSave}
           onClick={handleSave}
-          className={`w-full rounded-xl py-4 text-base font-bold transition-all ${
-            saved
-              ? 'bg-court-green text-white'
+          style={{
+            width: '100%',
+            padding: '14px 0',
+            borderRadius: 12,
+            border: 'none',
+            cursor: canSave ? 'pointer' : 'not-allowed',
+            background: saved
+              ? 'var(--color-success)'
               : canSave
-              ? 'bg-clay text-white hover:bg-clay-dark active:scale-95'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
+              ? 'var(--brand)'
+              : 'var(--color-slate-200)',
+            color: canSave || saved ? 'white' : 'var(--color-slate-400)',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 15,
+            fontWeight: 700,
+            transition: 'all 200ms cubic-bezier(0.2,0,0,1)',
+          }}
         >
-          {saved ? '✓ Plan regenerated!' : 'Save & Regenerate Plan'}
+          {saved ? 'Plan regenerated' : 'Save & regenerate plan'}
         </button>
       </div>
     </div>

@@ -21,17 +21,37 @@ export function DaySelector({ selected, onChange }: Props) {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <label className="block text-sm font-semibold text-gray-700">
-          Training Days
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <label
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--fg-primary)',
+          }}
+        >
+          Training days
         </label>
-        <span className={`text-xs font-medium ${valid ? 'text-court-green-dark' : 'text-clay'}`}>
-          {count} / 6 days selected {count < 3 && '(min 3)'}
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            fontWeight: 600,
+            color: valid ? 'var(--color-success)' : 'var(--fg-tertiary)',
+          }}
+        >
+          {count} / 6{count < 3 ? ' · min 3' : ''}
         </span>
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 6,
+        }}
+      >
         {ALL_DAYS.map((day) => {
           const isOn = selectedSet.has(day);
           return (
@@ -40,11 +60,18 @@ export function DaySelector({ selected, onChange }: Props) {
               type="button"
               onClick={() => toggle(day)}
               aria-pressed={isOn}
-              className={`rounded-lg py-3 text-xs font-semibold transition-colors ${
-                isOn
-                  ? 'bg-clay text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
+              style={{
+                padding: '12px 0',
+                borderRadius: 10,
+                border: 'none',
+                cursor: 'pointer',
+                background: isOn ? 'var(--brand)' : 'var(--bg-recessed)',
+                color: isOn ? 'white' : 'var(--fg-secondary)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 12,
+                fontWeight: 600,
+                transition: 'all 200ms cubic-bezier(0.2,0,0,1)',
+              }}
             >
               {day}
             </button>
@@ -53,7 +80,16 @@ export function DaySelector({ selected, onChange }: Props) {
       </div>
 
       {count > 6 && (
-        <p className="text-xs text-red-500">Maximum 6 training days</p>
+        <p
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 12,
+            color: '#a23a3a',
+            margin: 0,
+          }}
+        >
+          Maximum 6 training days
+        </p>
       )}
     </div>
   );

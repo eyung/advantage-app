@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 64" fill="none">
+  <circle cx="32" cy="32" r="26" fill="#245236"></circle>
+  <path d="M11 24.5 C 19.5 30.5, 44.5 30.5, 53 24.5" stroke="#f7f5ee" stroke-width="2.2" stroke-linecap="round" fill="none"></path>
+  <path d="M11 39.5 C 19.5 33.5, 44.5 33.5, 53 39.5" stroke="#f7f5ee" stroke-width="2.2" stroke-linecap="round" fill="none"></path>
+  <text x="74" y="40" font-family="Fraunces, Georgia, serif" font-size="28" font-weight="600" fill="#0e1f17" letter-spacing="-0.5">Advantage</text>
+</svg>

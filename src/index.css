@@ -2,15 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg-app:       #f7f5ee;
+  --bg-surface:   #ffffff;
+  --bg-surface-2: #fbf9f4;
+  --bg-recessed:  #efece2;
+  --bg-hover:     #ecf0f3;
+  --bg-pressed:   #d8dee5;
+
+  --fg-primary:   #0e1f17;
+  --fg-secondary: #3a444f;
+  --fg-tertiary:  #6f7a87;
+  --fg-muted:     #94a0ad;
+  --fg-on-brand:  #f7f5ee;
+
+  --brand:         #245236;
+  --brand-hover:   #2f6644;
+  --brand-pressed: #1c4029;
+  --brand-soft:    #ebf1ed;
+
+  --color-forest-100: #ebf1ed;
+  --color-forest-200: #d6e3dc;
+  --color-forest-800: #1c4029;
+  --color-forest-950: #0e1f17;
+  --color-slate-100:  #ecf0f3;
+  --color-slate-200:  #d8dee5;
+  --color-slate-400:  #94a0ad;
+  --color-success:    #2f8f5d;
+
+  --border-hairline: #d8dee5;
+  --border-default:  #b9c2cc;
+
+  --font-sans:    'Inter', system-ui, sans-serif;
+  --font-display: 'Fraunces', 'Inter', Georgia, serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --shadow-card:       0 1px 0 rgba(20,48,31,0.04), 0 8px 22px -10px rgba(20,48,31,0.10);
+  --shadow-card-hover: 0 1px 0 rgba(20,48,31,0.04), 0 14px 30px -12px rgba(20,48,31,0.18);
+  --shadow-sm:         0 1px 2px rgba(20,48,31,0.06), 0 1px 1px rgba(20,48,31,0.04);
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
 @layer base {
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    background-color: #F1F8E9;
-    color: #1A1A1A;
+    background-color: var(--bg-app);
+    color: var(--fg-primary);
     min-height: 100dvh;
   }
 
@@ -20,25 +62,6 @@
 }
 
 @layer components {
-  .court-bg {
-    background-color: #F1F8E9;
-    background-image:
-      repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 59px,
-        rgba(46,125,50,0.08) 59px,
-        rgba(46,125,50,0.08) 60px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 59px,
-        rgba(46,125,50,0.08) 59px,
-        rgba(46,125,50,0.08) 60px
-      );
-  }
-
   .page-container {
     @apply max-w-lg mx-auto px-4 pb-24 pt-4;
   }
