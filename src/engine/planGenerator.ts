@@ -8,8 +8,10 @@ import type {
   Exercise,
   CustomisationProfile,
   CustomExercise,
+  ResistanceBandLevel,
+  EquipmentType,
 } from '../types';
-import exercises, { getExerciseLibrary, exerciseMap } from '../data/exercises';
+import exercises, { getExerciseLibrary } from '../data/exercises';
 import { assignWeight } from './weightAssigner';
 import { getCurrentISOWeek } from '../utils/dateUtils';
 
@@ -22,9 +24,22 @@ const ALL_CATEGORIES: TennisCategory[] = [
   'general-strength',
 ];
 
+const BAND_KG_MAP: Record<ResistanceBandLevel, number> = {
+  Light: 5,
+  Medium: 15,
+  Heavy: 30,
+  'Extra-Heavy': 50,
+};
+
+const EQUIPMENT_TYPE_TO_FIELD: Record<EquipmentType, Exercise['equipment']> = {
+  dumbbells: 'dumbbell',
+  'resistance-bands': 'resistance-band',
+  kettlebells: 'kettlebell',
+  bodyweight: 'bodyweight',
+};
+
 export class InvalidProfileError extends Error {}
 
-// Mulberry32 PRNG — produces uniform [0, 1)
 function mulberry32(seed: number): () => number {
   let s = seed >>> 0;
   return function () {
@@ -57,27 +72,54 @@ function parseWeekNumber(weekISO: string): number {
   return match ? parseInt(match[1]!, 10) : 1;
 }
 
+function getWeightForExercise(exercise: Exercise, profile: EquipmentProfile): number {
+  switch (exercise.equipment) {
+    case 'dumbbell':
+      return assignWeight(exercise, profile.dumbbellWeights);
+    case 'kettlebell':
+      return assignWeight(exercise, profile.kettlebellWeights ?? []);
+    case 'resistance-band': {
+      const bandKg = (profile.resistanceBandLevels ?? [])
+        .map((l) => BAND_KG_MAP[l])
+        .sort((a, b) => a - b);
+      return assignWeight(exercise, bandKg.length > 0 ? bandKg : [0]);
+    }
+    case 'bodyweight':
+      return 0;
+  }
+}
+
 /**
- * Builds the eligible exercise pool filtered by exclusions and blocked categories.
+ * Builds the eligible exercise pool filtered by exclusions, blocked categories, and available equipment.
  * Empty category buckets are filled from the overflow of all non-empty buckets.
  */
 export function buildEligiblePool(
   allExercises: Exercise[],
-  customisation: CustomisationProfile
+  customisation: CustomisationProfile,
+  availableEquipmentTypes: EquipmentType[] = ['dumbbells', 'bodyweight']
 ): Record<TennisCategory, Exercise[]> {
   const excludedSet = new Set(customisation.excludedExerciseIds);
   const blockedSet = new Set(customisation.blockedCategories);
+
+  const equipmentFieldSet = new Set<Exercise['equipment']>(['bodyweight']);
+  for (const t of availableEquipmentTypes) {
+    equipmentFieldSet.add(EQUIPMENT_TYPE_TO_FIELD[t]);
+  }
 
   const pool = {} as Record<TennisCategory, Exercise[]>;
   for (const cat of ALL_CATEGORIES) {
     if (blockedSet.has(cat)) {
       pool[cat] = [];
     } else {
-      pool[cat] = allExercises.filter((e) => e.category === cat && !excludedSet.has(e.id));
+      pool[cat] = allExercises.filter(
+        (e) =>
+          e.category === cat &&
+          !excludedSet.has(e.id) &&
+          equipmentFieldSet.has(e.equipment)
+      );
     }
   }
 
-  // Build overflow from all non-empty buckets for gap filling
   const overflow: Exercise[] = ALL_CATEGORIES.flatMap((cat) => pool[cat]);
 
   for (const cat of ALL_CATEGORIES) {
@@ -90,7 +132,7 @@ export function buildEligiblePool(
 }
 
 /**
- * Builds a full training day from an eligible pool (replaces the original buildTrainingDay).
+ * Builds a full training day from an eligible pool.
  */
 export function buildTrainingDayFromPool(
   rand: () => number,
@@ -109,7 +151,7 @@ export function buildTrainingDayFromPool(
       category: cat,
       sets: Math.max(2, Math.min(5, exercise.defaultSets + setsVariance)),
       reps: Math.max(6, Math.min(20, exercise.defaultReps + repsVariance)),
-      weightKg: assignWeight(exercise, profile.dumbbellWeights),
+      weightKg: getWeightForExercise(exercise, profile),
     };
   });
 
@@ -118,8 +160,6 @@ export function buildTrainingDayFromPool(
 
 /**
  * Regenerates only the incomplete slots of an existing day.
- * Completed exercises (by ID) are preserved; the rest are replaced from the pool.
- * Uses a slot-indexed seed: customisationVersion * 100000 + dayIndex * 1000 + slotIndex
  */
 export function buildSlotsFromPool(
   customisationVersion: number,
@@ -143,7 +183,7 @@ export function buildSlotsFromPool(
       category: pe.category,
       sets: Math.max(2, Math.min(5, exercise.defaultSets + setsVariance)),
       reps: Math.max(6, Math.min(20, exercise.defaultReps + repsVariance)),
-      weightKg: assignWeight(exercise, profile.dumbbellWeights),
+      weightKg: getWeightForExercise(exercise, profile),
     };
   });
 
@@ -151,15 +191,58 @@ export function buildSlotsFromPool(
 }
 
 /**
+ * Applies aesthetics guarantee: if isAestheticsDay and no selected exercise is aesthetics-tagged,
+ * swaps the last slot with a seeded aesthetics exercise from the pool.
+ */
+function applyAestheticsGuarantee(
+  dayPlan: DayPlan,
+  pool: Record<TennisCategory, Exercise[]>,
+  profile: EquipmentProfile,
+  seed: number
+): DayPlan {
+  const poolMap = new Map<string, Exercise>();
+  for (const cat of ALL_CATEGORIES) {
+    for (const ex of pool[cat]) {
+      poolMap.set(ex.id, ex);
+    }
+  }
+
+  const hasAesthetics = dayPlan.exercises.some((pe) => {
+    const ex = poolMap.get(pe.exerciseId);
+    return ex?.goalTags?.includes('aesthetics');
+  });
+
+  if (hasAesthetics) return dayPlan;
+
+  const aestheticsPool: Exercise[] = ALL_CATEGORIES.flatMap((cat) =>
+    pool[cat].filter((e) => e.goalTags?.includes('aesthetics'))
+  );
+
+  if (aestheticsPool.length === 0) return dayPlan;
+
+  const rand = mulberry32(seed);
+  const picked = randChoice(rand, aestheticsPool);
+  const exercises = [...dayPlan.exercises];
+  exercises[exercises.length - 1] = {
+    exerciseId: picked.id,
+    category: picked.category,
+    sets: picked.defaultSets,
+    reps: picked.defaultReps,
+    weightKg: getWeightForExercise(picked, profile),
+  };
+
+  return { isTrainingDay: true, exercises };
+}
+
+/**
  * Generates a deterministic weekly plan.
- * Accepts optional customisation to filter the eligible exercise pool.
- * Same profile.configVersion + same weekISO + same customisation always produces the same plan.
  */
 export function generateWeeklyPlan(
   profile: EquipmentProfile,
   weekISO: string,
   customisation?: CustomisationProfile,
-  customExercises?: CustomExercise[]
+  customExercises?: CustomExercise[],
+  availableEquipmentTypes?: EquipmentType[]
 ): WeeklyPlan {
   if (profile.dumbbellWeights.length === 0) {
     throw new InvalidProfileError('dumbbellWeights must not be empty');
@@ -173,16 +256,26 @@ export function generateWeeklyPlan(
   const rand = mulberry32(seed);
 
   const allExercises = customExercises ? getExerciseLibrary(customExercises) : exercises;
-  const pool = customisation
-    ? buildEligiblePool(allExercises, customisation)
-    : buildEligiblePool(allExercises, { excludedExerciseIds: [], blockedCategories: [], customisationVersion: 0 });
+  const effectiveEquipment = availableEquipmentTypes ?? ['dumbbells', 'bodyweight'];
+  const pool = buildEligiblePool(
+    allExercises,
+    customisation ?? { excludedExerciseIds: [], blockedCategories: [], customisationVersion: 0 },
+    effectiveEquipment
+  );
 
+  const aestheticsDays = new Set(profile.aestheticsDays ?? []);
   const trainingSet = new Set(profile.trainingDays);
   const days = {} as Record<DayOfWeek, DayPlan>;
 
-  for (const day of ALL_DAYS) {
+  for (let dayIndex = 0; dayIndex < ALL_DAYS.length; dayIndex++) {
+    const day = ALL_DAYS[dayIndex]!;
     if (trainingSet.has(day)) {
-      days[day] = buildTrainingDayFromPool(rand, pool, profile);
+      let dayPlan = buildTrainingDayFromPool(rand, pool, profile);
+      if (aestheticsDays.has(day)) {
+        const aestheticsSeed = (profile.configVersion * 10000 + weekNum * 100 + dayIndex * 10) >>> 0;
+        dayPlan = applyAestheticsGuarantee(dayPlan, pool, profile, aestheticsSeed);
+      }
+      days[day] = dayPlan;
     } else {
       days[day] = { isTrainingDay: false, exercises: [] };
     }
@@ -196,5 +289,6 @@ export function getCurrentWeekPlan(profile: EquipmentProfile): WeeklyPlan {
 }
 
 export function getExerciseName(exerciseId: string): string {
-  return exerciseMap[exerciseId]?.name ?? exerciseId;
+  const ex = getExerciseLibrary([]).find((e) => e.id === exerciseId);
+  return ex?.name ?? exerciseId;
 }

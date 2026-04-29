@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { DayTabBar } from './DayTabBar';
 import { DayRoutineView } from './DayRoutineView';
+import { SessionEquipmentBar } from './SessionEquipmentBar';
 import { ProgressView } from '../progress/ProgressView';
 import { SettingsView } from '../setup/SettingsView';
 import { Icon } from '../ui/Icon';
 import { useWeekPlan } from '../../hooks/useWeekPlan';
 import { useCompletions } from '../../hooks/useCompletions';
+import { useEquipmentStore } from '../../store/equipmentStore';
 import type { DayOfWeek } from '../../types';
 
 const ALL_DAYS: DayOfWeek[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -20,6 +22,7 @@ type Tab = 'today' | 'progress';
 export function MainView() {
   const plan = useWeekPlan();
   const { isCompleted, toggleCompletion } = useCompletions();
+  const profile = useEquipmentStore((s) => s.profile);
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(getTodayDayOfWeek);
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [showSettings, setShowSettings] = useState(false);
@@ -89,6 +92,7 @@ export function MainView() {
             completedCounts={completedCounts}
           />
           <main className="flex-1 overflow-y-auto" style={{ padding: '14px 16px 24px' }}>
+            {profile && <SessionEquipmentBar profile={profile} />}
             {visibleDays.map((day) => (
               <DayRoutineView
                 key={day}

@@ -23,12 +23,18 @@ export function ExerciseCard({ exercise, completed, onToggle }: Props) {
   const excludeExercise = useCustomisationStore((s) => s.excludeExercise);
   const includeExercise = useCustomisationStore((s) => s.includeExercise);
 
-  const builtInName = exerciseMap[exercise.exerciseId]?.name;
-  const customName = allExercises.find((e) => e.id === exercise.exerciseId)?.name;
-  const name = builtInName ?? customName ?? exercise.exerciseId;
+  const builtIn = exerciseMap[exercise.exerciseId];
+  const custom = allExercises.find((e) => e.id === exercise.exerciseId);
+  const name = builtIn?.name ?? custom?.name ?? exercise.exerciseId;
 
   const cat = CATEGORY_META[exercise.category];
-  const weightLabel = exercise.weightKg === 0 ? 'Bodyweight' : `${exercise.weightKg} kg`;
+  const isBand = builtIn?.equipment === 'resistance-band';
+  const weightLabel =
+    exercise.weightKg === 0
+      ? 'Bodyweight'
+      : isBand
+      ? `${exercise.weightKg} kg (band)`
+      : `${exercise.weightKg} kg`;
   const excluded = isExcluded(exercise.exerciseId);
 
   function handleExcludeToggle(e: React.MouseEvent) {

@@ -24,6 +24,31 @@ const migrations: Record<number, MigrationFn> = {
     }
     return data;
   },
+  3: (data) => {
+    if (data[KEYS.equipment]) {
+      try {
+        const raw = JSON.parse(data[KEYS.equipment]) as Record<string, unknown>;
+        const hasState = 'state' in raw && typeof raw['state'] === 'object' && raw['state'] !== null;
+        const state = hasState ? (raw['state'] as Record<string, unknown>) : raw;
+        if (!('kettlebellWeights' in state)) state['kettlebellWeights'] = [];
+        if (!('resistanceBandLevels' in state)) state['resistanceBandLevels'] = [];
+        if (!('aestheticsDays' in state)) state['aestheticsDays'] = [];
+        if (!('defaultEquipmentTypes' in state)) state['defaultEquipmentTypes'] = ['dumbbells', 'bodyweight'];
+        data[KEYS.equipment] = hasState
+          ? JSON.stringify({ ...raw, state })
+          : JSON.stringify(state);
+      } catch {
+        // leave as-is
+      }
+    }
+    if (!data[KEYS.sessionEquipment]) {
+      data[KEYS.sessionEquipment] = JSON.stringify({
+        availableTypes: ['dumbbells', 'bodyweight'],
+        date: '',
+      });
+    }
+    return data;
+  },
 };
 
 export function runMigrationsIfNeeded(): void {

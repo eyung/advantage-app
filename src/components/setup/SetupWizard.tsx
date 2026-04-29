@@ -16,7 +16,7 @@ export function SetupWizard() {
     if (!canSave) return;
     setSaving(true);
     try {
-      saveConfig(weights, days);
+      saveConfig(weights, [], [], days, [], ['dumbbells', 'bodyweight']);
     } finally {
       setSaving(false);
     }
