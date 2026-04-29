@@ -355,8 +355,8 @@ export function ExerciseManagement({ onBack }: Props) {
             <AddExerciseForm
               initialCategory={addingToCategory}
               existingExercises={getExerciseLibrary(customExercises)}
-              onSave={(name, category) => {
-                addCustomExercise(name, category);
+              onSave={(name, category, goalTags) => {
+                addCustomExercise(name, category, goalTags);
                 setAddingToCategory(null);
               }}
               onCancel={() => setAddingToCategory(null)}

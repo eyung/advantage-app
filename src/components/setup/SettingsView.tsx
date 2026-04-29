@@ -1,19 +1,37 @@
 import { useState } from 'react';
 import { DumbbellInput } from './DumbbellInput';
+import { KettlebellInput } from './KettlebellInput';
+import { ResistanceBandInput } from './ResistanceBandInput';
 import { DaySelector } from './DaySelector';
+import { AestheticsDaySelector } from './AestheticsDaySelector';
 import { Icon } from '../ui/Icon';
 import { ExerciseManagement } from '../settings/ExerciseManagement';
 import { useEquipment } from '../../hooks/useEquipment';
-import type { DayOfWeek } from '../../types';
+import type { DayOfWeek, ResistanceBandLevel, EquipmentType } from '../../types';
 
 interface Props {
   onClose: () => void;
 }
 
+const EQUIPMENT_OPTIONS: { type: EquipmentType; label: string }[] = [
+  { type: 'dumbbells', label: 'Dumbbells' },
+  { type: 'resistance-bands', label: 'Resistance Bands' },
+  { type: 'kettlebells', label: 'Kettlebells' },
+  { type: 'bodyweight', label: 'Bodyweight' },
+];
+
 export function SettingsView({ onClose }: Props) {
   const { profile, saveConfig } = useEquipment();
   const [weights, setWeights] = useState<number[]>(profile?.dumbbellWeights ?? []);
+  const [kettlebellWeights, setKettlebellWeights] = useState<number[]>(profile?.kettlebellWeights ?? []);
+  const [resistanceBandLevels, setResistanceBandLevels] = useState<ResistanceBandLevel[]>(
+    profile?.resistanceBandLevels ?? []
+  );
   const [days, setDays] = useState<DayOfWeek[]>(profile?.trainingDays ?? []);
+  const [aestheticsDays, setAestheticsDays] = useState<DayOfWeek[]>(profile?.aestheticsDays ?? []);
+  const [defaultEquipmentTypes, setDefaultEquipmentTypes] = useState<EquipmentType[]>(
+    profile?.defaultEquipmentTypes ?? (['dumbbells', 'bodyweight'] as EquipmentType[])
+  );
   const [saved, setSaved] = useState(false);
   const [showExerciseManagement, setShowExerciseManagement] = useState(false);
 
@@ -21,12 +39,33 @@ export function SettingsView({ onClose }: Props) {
 
   function handleSave() {
     if (!canSave) return;
-    saveConfig(weights, days);
+    // Ensure bodyweight is always in the default equipment types
+    const effectiveDefault: EquipmentType[] = defaultEquipmentTypes.includes('bodyweight')
+      ? defaultEquipmentTypes
+      : [...defaultEquipmentTypes, 'bodyweight' as EquipmentType];
+    saveConfig(weights, kettlebellWeights, resistanceBandLevels, days, aestheticsDays, effectiveDefault);
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
       onClose();
     }, 800);
+  }
+
+  function toggleDefaultEquipment(type: EquipmentType) {
+    if (type === 'bodyweight') return; // always active
+    if (defaultEquipmentTypes.includes(type)) {
+      setDefaultEquipmentTypes(defaultEquipmentTypes.filter((t) => t !== type));
+    } else {
+      setDefaultEquipmentTypes([...defaultEquipmentTypes, type]);
+    }
+  }
+
+  function isEquipmentOwned(type: EquipmentType): boolean {
+    if (type === 'bodyweight') return true;
+    if (type === 'dumbbells') return weights.length > 0;
+    if (type === 'resistance-bands') return resistanceBandLevels.length > 0;
+    if (type === 'kettlebells') return kettlebellWeights.length > 0;
+    return false;
   }
 
   if (showExerciseManagement) {
@@ -77,6 +116,7 @@ export function SettingsView({ onClose }: Props) {
       </header>
 
       <div className="flex-1 overflow-y-auto" style={{ padding: 16 }}>
+        {/* Dumbbells */}
         <div
           style={{
             background: 'var(--bg-surface)',
@@ -89,6 +129,33 @@ export function SettingsView({ onClose }: Props) {
           <DumbbellInput weights={weights} onChange={setWeights} />
         </div>
 
+        {/* Resistance Bands */}
+        <div
+          style={{
+            background: 'var(--bg-surface)',
+            borderRadius: 18,
+            padding: 18,
+            boxShadow: 'var(--shadow-card)',
+            marginBottom: 14,
+          }}
+        >
+          <ResistanceBandInput selected={resistanceBandLevels} onChange={setResistanceBandLevels} />
+        </div>
+
+        {/* Kettlebells */}
+        <div
+          style={{
+            background: 'var(--bg-surface)',
+            borderRadius: 18,
+            padding: 18,
+            boxShadow: 'var(--shadow-card)',
+            marginBottom: 14,
+          }}
+        >
+          <KettlebellInput weights={kettlebellWeights} onChange={setKettlebellWeights} />
+        </div>
+
+        {/* Training Days */}
         <div
           style={{
             background: 'var(--bg-surface)',
@@ -99,6 +166,87 @@ export function SettingsView({ onClose }: Props) {
           }}
         >
           <DaySelector selected={days} onChange={setDays} />
+        </div>
+
+        {/* Aesthetics Days */}
+        <div
+          style={{
+            background: 'var(--bg-surface)',
+            borderRadius: 18,
+            padding: 18,
+            boxShadow: 'var(--shadow-card)',
+            marginBottom: 14,
+          }}
+        >
+          <AestheticsDaySelector
+            trainingDays={days}
+            selected={aestheticsDays}
+            onChange={setAestheticsDays}
+          />
+        </div>
+
+        {/* Default Equipment for Sessions */}
+        <div
+          style={{
+            background: 'var(--bg-surface)',
+            borderRadius: 18,
+            padding: 18,
+            boxShadow: 'var(--shadow-card)',
+            marginBottom: 14,
+          }}
+        >
+          <p
+            style={{
+              margin: '0 0 12px',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--fg-primary)',
+            }}
+          >
+            Default Equipment for Sessions
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {EQUIPMENT_OPTIONS.filter((opt) => isEquipmentOwned(opt.type)).map(({ type, label }) => {
+              const isBodyweight = type === 'bodyweight';
+              const active = isBodyweight || defaultEquipmentTypes.includes(type);
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => toggleDefaultEquipment(type)}
+                  disabled={isBodyweight}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    border: '1px solid var(--border-hairline)',
+                    background: active ? 'var(--brand-soft)' : 'var(--bg-recessed)',
+                    cursor: isBodyweight ? 'default' : 'pointer',
+                    opacity: isBodyweight ? 0.7 : 1,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: active ? 'var(--color-forest-800)' : 'var(--fg-tertiary)',
+                    }}
+                  >
+                    {label}
+                  </span>
+                  <Icon
+                    name={active ? 'check' : 'x'}
+                    size={14}
+                    style={{ color: active ? 'var(--brand)' : 'var(--fg-tertiary)' }}
+                  />
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <p

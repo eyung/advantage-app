@@ -7,21 +7,35 @@ export type TennisCategory =
   | 'hiit-stamina'
   | 'general-strength';
 
+export type ResistanceBandLevel = 'Light' | 'Medium' | 'Heavy' | 'Extra-Heavy';
+
+export type EquipmentType = 'dumbbells' | 'resistance-bands' | 'kettlebells' | 'bodyweight';
+
 export interface Exercise {
   id: string;
   name: string;
   category: TennisCategory;
-  equipment: 'dumbbell' | 'bodyweight';
+  equipment: 'dumbbell' | 'bodyweight' | 'resistance-band' | 'kettlebell';
   primaryMuscleGroup: 'legs' | 'chest' | 'back' | 'shoulders' | 'arms' | 'core' | 'full-body';
   defaultSets: number;
   defaultReps: number;
+  goalTags?: ('aesthetics')[];
 }
 
 export interface EquipmentProfile {
   dumbbellWeights: number[];
+  kettlebellWeights: number[];
+  resistanceBandLevels: ResistanceBandLevel[];
   trainingDays: DayOfWeek[];
+  aestheticsDays: DayOfWeek[];
+  defaultEquipmentTypes: EquipmentType[];
   configVersion: number;
   savedAt: string;
+}
+
+export interface SessionEquipmentAvailability {
+  availableTypes: EquipmentType[];
+  date: string;
 }
 
 export interface PlannedExercise {
@@ -52,6 +66,7 @@ export interface CustomExercise {
   defaultSets: number;
   defaultReps: number;
   createdAt: string;
+  goalTags?: ('aesthetics')[];
 }
 
 export interface CustomisationProfile {

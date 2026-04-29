@@ -20,13 +20,14 @@ const CATEGORY_LABELS: Record<TennisCategory, string> = {
 interface Props {
   initialCategory?: TennisCategory;
   existingExercises: Exercise[];
-  onSave: (name: string, category: TennisCategory) => void;
+  onSave: (name: string, category: TennisCategory, goalTags: ('aesthetics')[]) => void;
   onCancel: () => void;
 }
 
 export function AddExerciseForm({ initialCategory, existingExercises, onSave, onCancel }: Props) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<TennisCategory | null>(initialCategory ?? null);
+  const [isAesthetics, setIsAesthetics] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function handleSubmit() {
@@ -46,7 +47,7 @@ export function AddExerciseForm({ initialCategory, existingExercises, onSave, on
       setError('An exercise with this name already exists in this category');
       return;
     }
-    onSave(trimmed, category);
+    onSave(trimmed, category, isAesthetics ? ['aesthetics'] : []);
   }
 
   return (
@@ -139,6 +140,33 @@ export function AddExerciseForm({ initialCategory, existingExercises, onSave, on
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Aesthetics tag */}
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <input
+          id="aesthetics-checkbox"
+          type="checkbox"
+          checked={isAesthetics}
+          onChange={(e) => setIsAesthetics(e.target.checked)}
+          style={{ marginTop: 2, accentColor: 'var(--brand)', flexShrink: 0 }}
+        />
+        <label
+          htmlFor="aesthetics-checkbox"
+          style={{ fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg-secondary)', cursor: 'pointer' }}
+        >
+          Aesthetics exercise
+          <span
+            style={{
+              display: 'block',
+              fontSize: 11,
+              color: 'var(--fg-tertiary)',
+              marginTop: 2,
+            }}
+          >
+            This exercise appears on aesthetics-focused training days
+          </span>
+        </label>
       </div>
 
       {/* Error message */}

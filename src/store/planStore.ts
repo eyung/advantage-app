@@ -7,6 +7,7 @@ import type {
   CustomisationProfile,
   CustomExercise,
   DayOfWeek,
+  EquipmentType,
 } from '../types';
 import {
   generateWeeklyPlan,
@@ -35,7 +36,8 @@ interface PlanState {
   generateFresh: (
     profile: EquipmentProfile,
     customisation: CustomisationProfile,
-    customExercises: CustomExercise[]
+    customExercises: CustomExercise[],
+    availableEquipmentTypes: EquipmentType[]
   ) => void;
 
   applyCustomisation: (
@@ -43,7 +45,8 @@ interface PlanState {
     customisation: CustomisationProfile,
     customExercises: CustomExercise[],
     completions: ExerciseCompletion[],
-    weekDates: string[]
+    weekDates: string[],
+    availableEquipmentTypes: EquipmentType[]
   ) => void;
 }
 
@@ -52,13 +55,26 @@ export const usePlanStore = create<PlanState>()(
     (set, get) => ({
       plan: null,
 
-      generateFresh(profile, customisation, customExercises) {
+      generateFresh(profile, customisation, customExercises, availableEquipmentTypes) {
         const weekISO = getCurrentISOWeek();
-        const plan = generateWeeklyPlan(profile, weekISO, customisation, customExercises);
+        const plan = generateWeeklyPlan(
+          profile,
+          weekISO,
+          customisation,
+          customExercises,
+          availableEquipmentTypes
+        );
         set({ plan });
       },
 
-      applyCustomisation(profile, customisation, customExercises, completions, weekDates) {
+      applyCustomisation(
+        profile,
+        customisation,
+        customExercises,
+        completions,
+        weekDates,
+        availableEquipmentTypes
+      ) {
         const { plan } = get();
         const weekISO = getCurrentISOWeek();
 
@@ -68,13 +84,19 @@ export const usePlanStore = create<PlanState>()(
           plan.configVersion !== profile.configVersion;
 
         if (isStale) {
-          const freshPlan = generateWeeklyPlan(profile, weekISO, customisation, customExercises);
+          const freshPlan = generateWeeklyPlan(
+            profile,
+            weekISO,
+            customisation,
+            customExercises,
+            availableEquipmentTypes
+          );
           set({ plan: freshPlan });
           return;
         }
 
         const allExercises = getExerciseLibrary(customExercises);
-        const pool = buildEligiblePool(allExercises, customisation);
+        const pool = buildEligiblePool(allExercises, customisation, availableEquipmentTypes);
 
         const updatedDays = { ...plan.days };
         let changed = false;
@@ -93,18 +115,15 @@ export const usePlanStore = create<PlanState>()(
           );
 
           if (completedIds.size >= dayPlan.exercises.length) {
-            // Fully complete — preserve as-is
             continue;
           }
 
           if (completedIds.size === 0) {
-            // Fully incomplete — regenerate entirely
             const seed = (profile.configVersion * 10000 + dayIndex * 100 + customisation.customisationVersion) >>> 0;
             const rand = mulberry32(seed);
             updatedDays[day] = buildTrainingDayFromPool(rand, pool, profile);
             changed = true;
           } else {
-            // Partially complete — keep completed, replace incomplete slots
             updatedDays[day] = buildSlotsFromPool(
               customisation.customisationVersion,
               dayIndex,

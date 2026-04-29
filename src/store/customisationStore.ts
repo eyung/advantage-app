@@ -17,7 +17,7 @@ interface CustomisationState {
   includeExercise: (id: string) => void;
   blockCategory: (cat: TennisCategory) => void;
   unblockCategory: (cat: TennisCategory) => void;
-  addCustomExercise: (name: string, category: TennisCategory) => CustomExercise;
+  addCustomExercise: (name: string, category: TennisCategory, goalTags?: ('aesthetics')[]) => CustomExercise;
   deleteCustomExercise: (id: string) => void;
 }
 
@@ -76,7 +76,7 @@ export const useCustomisationStore = create<CustomisationState>()(
         }));
       },
 
-      addCustomExercise(name, category) {
+      addCustomExercise(name, category, goalTags?) {
         const defaults = CATEGORY_DEFAULTS[category];
         const id = `custom-${crypto.randomUUID().slice(0, 8)}`;
         const exercise: CustomExercise = {
@@ -88,6 +88,7 @@ export const useCustomisationStore = create<CustomisationState>()(
           defaultSets: defaults.defaultSets,
           defaultReps: defaults.defaultReps,
           createdAt: new Date().toISOString(),
+          ...(goalTags && goalTags.length > 0 ? { goalTags } : {}),
         };
         set((s) => ({
           customExercises: [...s.customExercises, exercise],
