@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import type { ExerciseCompletion } from '../types';
+import type { ExerciseCompletion, SessionSummary } from '../types';
 import { getTodayISO, getCurrentISOWeek } from '../utils/dateUtils';
+import { exerciseMap } from '../data/exercises';
 
 interface CompletionState {
   completions: ExerciseCompletion[];
@@ -15,6 +16,7 @@ interface CompletionState {
   removeCompletion: (exerciseId: string, date: string) => void;
   getCompletionsForWeek: (weekISO: string) => ExerciseCompletion[];
   getCompletionHistory: (exerciseId: string) => ExerciseCompletion[];
+  getSessionSummary: (date: string) => SessionSummary;
 }
 
 export const useCompletionStore = create<CompletionState>()(
@@ -54,6 +56,19 @@ export const useCompletionStore = create<CompletionState>()(
         return get()
           .completions.filter((c) => c.exerciseId === exerciseId)
           .sort((a, b) => a.date.localeCompare(b.date));
+      },
+
+      getSessionSummary(date) {
+        const dayCompletions = get().completions.filter((c) => c.date === date);
+        const exerciseIds = dayCompletions.map((c) => c.exerciseId);
+        const muscleGroups = [
+          ...new Set(
+            exerciseIds
+              .map((id) => exerciseMap[id]?.primaryMuscleGroup)
+              .filter((g): g is NonNullable<typeof g> => g !== undefined)
+          ),
+        ];
+        return { date, exerciseIds, muscleGroups };
       },
     }),
     { name: 'advantage_completions' }

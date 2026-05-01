@@ -92,7 +92,7 @@ All T004–T008 can run in parallel (different files, all depend only on Phase 1
 **Purpose**: Type verification, build confirmation, and visual browser check.
 
 - [x] T021 Run `npx tsc --noEmit` and fix any TypeScript errors across all new and modified files; then run `npm run build` and confirm clean production build
-- [ ] T022 [P] Visual browser verification per `specs/005-equipment-expansion/quickstart.md`: open `npm run dev` and walk through all 7 quickstart scenarios; confirm band exercises show "(band)" suffix, session bar resets next day, aesthetics exercises appear on designated days, no emoji in any new UI
+- [x] T022 [P] Visual browser verification per `specs/005-equipment-expansion/quickstart.md`: open `npm run dev` and walk through all 7 quickstart scenarios; confirm band exercises show "(band)" suffix, session bar resets next day, aesthetics exercises appear on designated days, no emoji in any new UI
 
 ---
 
@@ -178,12 +178,60 @@ T020: ExerciseManagement     ← after T018
 
 ---
 
+## Phase 7: Movement Pattern Balance & Session History (Clarification Session 2026-04-30)
+
+**Purpose**: Address pull exercise gap (FR-008 extension), add push/pull balance engine bias (FR-017), add consecutive-day muscle group guard (FR-018), and add session summary selector for Phase 2 adaptive scheduling (FR-019). All tasks depend on Phase 1–6 being complete.
+
+**⚠️ T022 (browser test) is deferred until after this phase.**
+
+- [x] T023 Add `MovementPattern` union type to `src/types.ts`: `type MovementPattern = 'push-horizontal' | 'push-vertical' | 'pull-horizontal' | 'pull-vertical' | 'hinge' | 'squat' | 'rotation' | 'lateral' | 'carry' | 'other'`; add required field `movementPattern: MovementPattern` to the `Exercise` interface; add `interface SessionSummary { date: string; exerciseIds: string[]; muscleGroups: Exercise['primaryMuscleGroup'][] }` to `src/types.ts`
+
+- [x] T024 Update `src/data/exercises.ts`: (a) add `movementPattern` to all 72 existing exercises per the classification table in `specs/005-equipment-expansion/research.md §8` — lateral-agility exercises are `lateral`/`squat`/`carry`/`other`; rotational-power exercises are `rotation`/`squat`/`other`/`pull-horizontal`/`push-vertical`; shoulder-stability exercises are `push-vertical`/`pull-horizontal`/`other`; hiit-stamina exercises are `other`/`squat`/`push-vertical`/`pull-horizontal`/`hinge`; general-strength exercises are `squat`/`hinge`/`push-horizontal`/`pull-horizontal`/`push-vertical`; full mapping in research.md; (b) add the 7 new pull exercises defined in `research.md §9`: in `general-strength` add `band-lat-pulldown` (resistance-band, back, pull-vertical, 3×12), `band-straight-arm-pulldown` (resistance-band, back, pull-vertical, 3×12), `inverted-row` (bodyweight, back, pull-horizontal, 3×10), `dumbbell-bent-over-row` (dumbbell, back, pull-horizontal, 3×10), `kb-single-arm-row` (kettlebell, back, pull-horizontal, 3×10); in `shoulder-stability` add `band-seated-row` (resistance-band, back, pull-horizontal, 3×12), `dumbbell-chest-supported-row` (dumbbell, back, pull-horizontal, 3×10)
+
+- [x] T025 [P] Add `getSessionSummary(date: string): SessionSummary` selector to `src/store/completionStore.ts`: filter `completions` by `c.date === date`; map `exerciseId` → `Exercise.primaryMuscleGroup` using `getExerciseLibrary([])` (import from `src/data/exercises.ts`); return `{ date, exerciseIds: dayCompletions.map(c => c.exerciseId), muscleGroups: [...new Set(muscleGroupLookups.filter(Boolean))] }`; add `getSessionSummary` to the `CompletionState` interface; no new localStorage key required (derives from existing `advantage_completions`)
+
+- [x] T026 Implement pull-preference bias and consecutive-day guard in `src/engine/planGenerator.ts`: (a) import `MovementPattern` from `../types`; (b) add helpers `const isPull = (p: MovementPattern): boolean => p === 'pull-horizontal' || p === 'pull-vertical'` and `const isPush = (p: MovementPattern): boolean => p === 'push-horizontal' || p === 'push-vertical'`; (c) add `function dominantMuscleGroup(dayPlan: DayPlan, exerciseMap: Map<string, Exercise>): Exercise['primaryMuscleGroup'] | undefined` — counts `primaryMuscleGroup` across all planned exercises and returns the mode (first-encountered on tie); (d) update `buildTrainingDayFromPool` signature to `(rand, pool, profile, avoidMuscleGroup?: Exercise['primaryMuscleGroup'])`: inside the category loop, first filter category pool to exercises where `e.primaryMuscleGroup !== avoidMuscleGroup` (use full pool if filtered is empty — graceful fallback); then from the effective pool build `pullPool = effective.filter(e => isPull(e.movementPattern))`; if `dayPullCount < dayPushCount && pullPool.length > 0` select from `pullPool`, else select from effective pool; after selection increment `dayPullCount` or `dayPushCount` accordingly; (e) in `generateWeeklyPlan` add `let prevTrainingDay: DayPlan | null = null; let prevTrainingDayIdx: number | null = null;` before the `ALL_DAYS` loop; inside the loop: on rest days set both to `null`; on training days compute `avoidMuscleGroup = (prevTrainingDay !== null && prevTrainingDayIdx === dayIndex - 1) ? dominantMuscleGroup(prevTrainingDay, exerciseMap) : undefined` and pass to `buildTrainingDayFromPool`; update `prevTrainingDay` and `prevTrainingDayIdx` after each training day; build `exerciseMap` once before the loop using `new Map(allExercises.map(e => [e.id, e]))`
+
+- [x] T027 [P] Write Vitest tests covering SC-007, SC-008, SC-009 in `src/engine/planGenerator.test.ts` (create file if absent): SC-007 — generate 10 weekly plans with a full equipment profile (all 4 types); for each plan count exercises where `isPull(movementPattern)` and where `isPush(movementPattern)`; assert pull ≥ push in ≥ 8 of 10 plans; SC-008 — generate a weekly plan with 3 consecutive training days (Mon/Tue/Wed); for each consecutive pair assert `dominantMuscleGroup(day[i]) !== dominantMuscleGroup(day[i+1])`; also test graceful fallback when all pool exercises share the avoided muscle group; add test for `getSessionSummary` in `src/store/completionStore.test.ts` (create if absent): add 3 completions with different `exerciseId`s on the same date; call `getSessionSummary(date)`; assert `exerciseIds.length === 3` and `muscleGroups` contains the expected groups
+
+- [x] T028 Run `npx tsc --noEmit` — TypeScript will report a compile error for any `Exercise` object in `exercises.ts` missing the required `movementPattern` field; fix any remaining exercises; then run `npm test` and confirm all tests pass including the new ones from T027; confirm `npm run build` produces a clean production bundle
+
+**Checkpoint**: Push:pull ratio ≤ 1.25:1 in exercise library; engine soft-bias active; consecutive-day guard active; `getSessionSummary` available for Phase 2; all tests green.
+
+---
+
+## Phase 8: Final Browser Verification
+
+**Purpose**: Full quickstart walkthrough now that all engine and library changes are in place.
+
+- [x] T022 [P] Visual browser verification per `specs/005-equipment-expansion/quickstart.md`: open `npm run dev` and walk through all 7 quickstart scenarios; additionally verify: (a) two consecutive training days show different dominant muscle group exercises; (b) a bands-only session still generates a plan (pull-bias graceful fallback); (c) after completing exercises on a training day, `getSessionSummary(todayISO())` returns non-empty result (verify in browser console or React DevTools)
+
+---
+
+## Updated Dependencies
+
+### New Phase 7 Dependencies
+
+```
+T023: types.ts                   ← first (unblocks T024/T025/T026)
+T024: exercises.ts               ← after T023
+T025: completionStore.ts         ← after T023, parallel with T024
+T026: planGenerator.ts           ← after T023 + T024 (needs updated exercise types + movementPattern data)
+T027: tests                      ← after T024 + T025 + T026
+T028: tsc + npm test + build     ← after T027
+T022: browser test               ← after T028 (moved to Phase 8)
+```
+
+---
+
 ## Notes
 
 - [P] tasks = different files, safe to execute in parallel
-- No tests requested in spec — no test tasks generated
+- No tests were requested in the original spec — tests added in T027 specifically cover the new engine behaviours from the clarification session (SC-007, SC-008, SC-009)
 - T014 and T019 both modify `SettingsView.tsx` — run strictly sequentially (T014 → T019)
 - T018 (AddExerciseForm) and T020 (ExerciseManagement) are different files — can start in parallel with T017 then wire sequentially
-- Visual verification (T022) requires `npm run dev` and a browser — not replaceable by `tsc --noEmit` alone
+- Visual verification (T022/Phase 8) requires `npm run dev` and a browser — not replaceable by `tsc --noEmit` alone
 - `bodyweight` is always included in the equipment filter regardless of session settings (per spec Assumption §8)
 - Aesthetics guarantee only fires when needed — non-aesthetics days are unaffected by this logic
+- T024 and T026 both modify files in `src/` that depend on `MovementPattern` — run T023 strictly before either
+- T024 (exercises.ts) is a large mechanical task — tag existing 72 exercises first, then append the 7 new pull exercises

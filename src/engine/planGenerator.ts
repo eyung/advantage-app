@@ -10,6 +10,7 @@ import type {
   CustomExercise,
   ResistanceBandLevel,
   EquipmentType,
+  MovementPattern,
 } from '../types';
 import exercises, { getExerciseLibrary } from '../data/exercises';
 import { assignWeight } from './weightAssigner';
@@ -39,6 +40,29 @@ const EQUIPMENT_TYPE_TO_FIELD: Record<EquipmentType, Exercise['equipment']> = {
 };
 
 export class InvalidProfileError extends Error {}
+
+const isPull = (p: MovementPattern): boolean =>
+  p === 'pull-horizontal' || p === 'pull-vertical';
+
+const isPush = (p: MovementPattern): boolean =>
+  p === 'push-horizontal' || p === 'push-vertical';
+
+function dominantMuscleGroup(
+  dayPlan: DayPlan,
+  exMap: Map<string, Exercise>
+): Exercise['primaryMuscleGroup'] | undefined {
+  const counts = new Map<Exercise['primaryMuscleGroup'], number>();
+  for (const pe of dayPlan.exercises) {
+    const ex = exMap.get(pe.exerciseId);
+    if (ex) counts.set(ex.primaryMuscleGroup, (counts.get(ex.primaryMuscleGroup) ?? 0) + 1);
+  }
+  let best: Exercise['primaryMuscleGroup'] | undefined;
+  let bestCount = 0;
+  for (const [group, count] of counts) {
+    if (count > bestCount) { bestCount = count; best = group; }
+  }
+  return best;
+}
 
 function mulberry32(seed: number): () => number {
   let s = seed >>> 0;
@@ -133,17 +157,38 @@ export function buildEligiblePool(
 
 /**
  * Builds a full training day from an eligible pool.
+ * avoidMuscleGroup: consecutive-day guard — prefer exercises not matching this group.
+ * Pull-preference bias: when dayPullCount < dayPushCount, prefer pull exercises.
  */
 export function buildTrainingDayFromPool(
   rand: () => number,
   pool: Record<TennisCategory, Exercise[]>,
-  profile: EquipmentProfile
+  profile: EquipmentProfile,
+  avoidMuscleGroup?: Exercise['primaryMuscleGroup']
 ): DayPlan {
   const shuffledCategories = shuffle(rand, ALL_CATEGORIES);
+  let dayPullCount = 0;
+  let dayPushCount = 0;
 
   const planned: PlannedExercise[] = shuffledCategories.map((cat) => {
     const categoryPool = pool[cat];
-    const exercise = randChoice(rand, categoryPool.length > 0 ? categoryPool : exercises);
+
+    // Consecutive-day guard: prefer exercises not matching the avoided muscle group
+    const guarded = avoidMuscleGroup
+      ? categoryPool.filter((e) => e.primaryMuscleGroup !== avoidMuscleGroup)
+      : categoryPool;
+    const effective = guarded.length > 0 ? guarded : categoryPool;
+    const fallback = effective.length > 0 ? effective : exercises;
+
+    // Pull-preference bias: if behind on pulls, select from pull-only sub-pool
+    const pullPool = effective.filter((e) => isPull(e.movementPattern));
+    const selectionPool =
+      dayPullCount < dayPushCount && pullPool.length > 0 ? pullPool : fallback;
+
+    const exercise = randChoice(rand, selectionPool);
+    if (isPull(exercise.movementPattern)) dayPullCount++;
+    if (isPush(exercise.movementPattern)) dayPushCount++;
+
     const setsVariance = randInt(rand, -1, 1);
     const repsVariance = randInt(rand, -2, 2);
     return {
@@ -266,19 +311,33 @@ export function generateWeeklyPlan(
   const aestheticsDays = new Set(profile.aestheticsDays ?? []);
   const trainingSet = new Set(profile.trainingDays);
   const days = {} as Record<DayOfWeek, DayPlan>;
+  const exerciseMapForGuard = new Map(allExercises.map((e) => [e.id, e]));
+
+  let prevTrainingDay: DayPlan | null = null;
+  let prevTrainingDayIdx: number | null = null;
 
   for (let dayIndex = 0; dayIndex < ALL_DAYS.length; dayIndex++) {
     const day = ALL_DAYS[dayIndex]!;
-    if (trainingSet.has(day)) {
-      let dayPlan = buildTrainingDayFromPool(rand, pool, profile);
-      if (aestheticsDays.has(day)) {
-        const aestheticsSeed = (profile.configVersion * 10000 + weekNum * 100 + dayIndex * 10) >>> 0;
-        dayPlan = applyAestheticsGuarantee(dayPlan, pool, profile, aestheticsSeed);
-      }
-      days[day] = dayPlan;
-    } else {
+    if (!trainingSet.has(day)) {
       days[day] = { isTrainingDay: false, exercises: [] };
+      prevTrainingDay = null;
+      prevTrainingDayIdx = null;
+      continue;
     }
+
+    const avoidMuscleGroup =
+      prevTrainingDay !== null && prevTrainingDayIdx === dayIndex - 1
+        ? dominantMuscleGroup(prevTrainingDay, exerciseMapForGuard)
+        : undefined;
+
+    let dayPlan = buildTrainingDayFromPool(rand, pool, profile, avoidMuscleGroup);
+    if (aestheticsDays.has(day)) {
+      const aestheticsSeed = (profile.configVersion * 10000 + weekNum * 100 + dayIndex * 10) >>> 0;
+      dayPlan = applyAestheticsGuarantee(dayPlan, pool, profile, aestheticsSeed);
+    }
+    days[day] = dayPlan;
+    prevTrainingDay = dayPlan;
+    prevTrainingDayIdx = dayIndex;
   }
 
   return { weekISO, configVersion: profile.configVersion, days };

@@ -15,6 +15,14 @@
 - Q: How should the body aesthetics goal manifest? → A: Secondary "aesthetics" tag on exercises; plan incorporates tagged exercises on user-configured days
 - Q: How should the plan mix multiple equipment types? → A: User marks which equipment is available per session (or sets a default); plan uses only available equipment for that day
 
+### Session 2026-04-30
+
+- Q: Should tennis-day scheduling (user marks tennis days; plan adapts volume/intensity) be in scope for 005? → A: Defer to feature 006 — out of scope for this branch
+- Q: How should vertical pull exercises be covered given no pull-up bar equipment type exists? → A: Band-based vertical pulls (Band Lat Pulldown, Band Straight-Arm Pulldown) + bodyweight inverted rows; no new equipment entity required
+- Q: Should the plan engine enforce push:pull movement pattern balance? → A: Soft target — engine prefers pull exercises when selecting within categories that offer both, nudging toward ≥ 1:1 pull:push ratio across the weekly plan; no hard block
+- Q: How should the engine handle rest-day-aware weekly scheduling? → A: Phased approach — Phase 1 (005): baseline rule-based scheduling with consecutive-day muscle group guard; app also collects session history (exercises, muscle groups, dates). Phase 2 (future feature): engine uses accumulated history to modulate volume/intensity adaptively. Phase 1 rules serve as cold-start fallback in Phase 2.
+- Q: Which categories should new pull exercises be placed in? → A: Split by pull type — vertical pulls (Band Lat Pulldown, Band Straight-Arm Pulldown, Inverted Row) → `general-strength`; scapular/horizontal pulls at shoulder height → `shoulder-stability`
+
 ---
 
 ## User Scenarios & Testing *(mandatory)*
@@ -108,7 +116,10 @@ The app ships with approximately 10–12 new built-in exercises for resistance b
 - **FR-005**: Users MUST be able to save a default equipment availability mix that applies automatically on future sessions without requiring manual selection.
 - **FR-006**: The plan generator MUST use only exercises compatible with the session's available equipment; unavailable equipment types MUST be excluded from the eligible pool for that session.
 - **FR-007**: When an equipment type is set as unavailable and no eligible exercises remain for a category slot, the plan MUST fall back to bodyweight exercises for that slot.
-- **FR-008**: The app MUST ship with approximately 10–12 new built-in resistance band exercises and approximately 10–12 new built-in kettlebell exercises, distributed across the existing 5 tennis-performance categories.
+- **FR-008**: The app MUST ship with approximately 10–12 new built-in resistance band exercises and approximately 10–12 new built-in kettlebell exercises, distributed across the existing 5 tennis-performance categories. The new exercises MUST include:
+  - Vertical pull movements (Band Lat Pulldown, Band Straight-Arm Pulldown, Inverted Row) placed in the `general-strength` category.
+  - Scapular/horizontal pull movements at shoulder height (e.g., Band Seated Row) placed in the `shoulder-stability` category.
+  - Bodyweight inverted rows require no equipment and are always eligible regardless of per-session availability.
 - **FR-009**: Each built-in exercise MUST carry a primary equipment tag (`resistance-band`, `kettlebell`, `dumbbell`, or `bodyweight`) and optionally a secondary goal tag (`aesthetics`).
 - **FR-010**: Users MUST be able to designate specific training days as "aesthetics days" in Settings.
 - **FR-011**: On aesthetics days, the plan MUST include at least one aesthetics-tagged exercise in the day's routine.
@@ -117,6 +128,9 @@ The app ships with approximately 10–12 new built-in exercises for resistance b
 - **FR-014**: All new built-in exercises MUST be visible in Exercise Management and subject to the same per-exercise exclude/include controls as existing exercises.
 - **FR-015**: Custom exercises added by the user MUST support an optional "aesthetics" tag at creation time.
 - **FR-016**: Equipment profile data (band levels, kettlebell weights) and aesthetics day configuration MUST be persisted in local storage and survive app restarts.
+- **FR-017**: The plan generator MUST apply a soft pull-preference bias when selecting exercises within any category that contains both push and pull movement options, targeting a ≥ 1:1 pull-to-push ratio across the full weekly plan. This MUST NOT cause plan generation to fail on constrained equipment pools.
+- **FR-018**: The plan generator MUST implement a consecutive-day muscle group guard: when a training day immediately follows another training day (no rest day between), the engine MUST avoid selecting exercises whose primary muscle group matches the previous day's dominant muscle group.
+- **FR-019**: The app MUST log each completed workout session, recording at minimum: date, exercises performed, and primary muscle groups trained. This session history is the foundation for Phase 2 adaptive scheduling in a future feature.
 
 ### Key Entities
 
@@ -125,6 +139,7 @@ The app ships with approximately 10–12 new built-in exercises for resistance b
 - **SessionEquipmentAvailability**: The equipment types available for the current session (`dumbbells`, `resistance-bands`, `kettlebells`, `bodyweight`); includes a saved default.
 - **ExerciseGoalTag**: A secondary tag on an exercise indicating a non-primary goal; currently only `aesthetics` is defined; extensible for future goals.
 - **AestheticsDayConfig**: The set of training days (by DayOfWeek) on which aesthetics exercises are included in the plan.
+- **WorkoutSessionLog**: A persisted record of a completed session; fields: `date` (ISO date), `exerciseIds` (array), `muscleGroups` (array of primary muscle groups trained). Designed to be extensible for Phase 2 adaptive scheduling.
 
 ---
 
@@ -138,6 +153,9 @@ The app ships with approximately 10–12 new built-in exercises for resistance b
 - **SC-004**: On any aesthetics-enabled training day, at least 1 of the 5 planned exercises is aesthetics-tagged in 100% of plan generations.
 - **SC-005**: Equipment profile data and aesthetics day preferences survive an app restart in 100% of cases.
 - **SC-006**: When a user sets equipment availability to a single type (e.g., bands only), zero exercises requiring other equipment appear in that session's plan.
+- **SC-007**: Across any generated weekly plan, the count of pull-pattern exercises is ≥ the count of push-pattern exercises in ≥ 80% of plan generations (measured over a sample of 10 generated plans with a full equipment pool).
+- **SC-008**: When two training days are scheduled consecutively (no rest day between), the primary muscle group of the second day's dominant exercise category differs from the first day's in 100% of plan generations.
+- **SC-009**: After completing a workout, a session log entry is created and retrievable, containing at minimum the date, list of exercise IDs performed, and primary muscle groups trained.
 
 ---
 
@@ -149,5 +167,10 @@ The app ships with approximately 10–12 new built-in exercises for resistance b
 - Aesthetics-tagged exercises are a subset of the existing 5 categories — they are not a standalone 6th category. The category structure remains unchanged.
 - Per-session equipment availability is stored ephemerally (reset to default on each new day) while the default preference is persisted.
 - The custom exercise creation flow (from feature 004) is extended with an optional "aesthetics" checkbox — no other changes to that flow are required.
+- Tennis-day scheduling (letting users mark which days they play tennis so the plan can adjust volume/intensity) is explicitly out of scope for this feature; it will be addressed in feature 006.
+- The Phase 1 scheduling engine (005) uses static rule-based logic (consecutive-day muscle group guard, push:pull soft preference). Phase 2 adaptive scheduling — using accumulated session history to modulate volume and intensity — is deferred to a future feature. Phase 1 rules MUST remain active as the cold-start fallback in Phase 2.
+- Session history logging (FR-019) is a data collection prerequisite for Phase 2; the schema MUST be designed to be extensible (dates, exercises, muscle groups at minimum).
 - All new built-in exercises follow the existing tennis-performance framing (they serve on-court performance, general health, or aesthetics goals that also support athleticism).
+- Vertical pull movements are implemented as band-based exercises (Band Lat Pulldown, Band Straight-Arm Pulldown) and bodyweight inverted rows — all placed in `general-strength`. Scapular/horizontal pull exercises at shoulder height are placed in `shoulder-stability`. No "pull-up bar" equipment type is introduced in this feature.
+- The new exercise additions MUST achieve approximate push:pull parity in the library (target ratio ≤ 1.25:1 push-to-pull).
 - Bodyweight is always considered "available" regardless of per-session availability settings — it requires no equipment and cannot be deselected.

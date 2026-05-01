@@ -57,9 +57,25 @@ export function assignWeight(
 
 **Display in ExerciseCard**: When `PlannedExercise.weightKg > 0` and the underlying exercise has `equipment === 'resistance-band'`, display as `"${weightKg} kg (band)"`. This requires the exercise lookup in ExerciseCard to check `equipment`.
 
-## `buildTrainingDayFromPool` / `buildSlotsFromPool` (modified weight selection)
+## `buildTrainingDayFromPool` / `buildSlotsFromPool` (modified weight selection + new parameters)
 
-Both functions currently call `assignWeight(exercise, profile.dumbbellWeights)`. Replace with a helper:
+Updated signature (Session 2026-04-30):
+
+```typescript
+export function buildTrainingDayFromPool(
+  rand: () => number,
+  pool: Record<TennisCategory, Exercise[]>,
+  profile: EquipmentProfile,
+  avoidMuscleGroup?: Exercise['primaryMuscleGroup']  // NEW — consecutive-day guard
+): DayPlan
+```
+
+**Selection logic** (applied per category slot):
+1. **Consecutive-day guard**: filter pool to exercises where `primaryMuscleGroup !== avoidMuscleGroup`. If filtered pool is empty, use full category pool (graceful fallback).
+2. **Pull-preference bias**: from the effective pool, build `pullPool = exercises.filter(isPull)`. If `dayPullCount < dayPushCount && pullPool.length > 0`, select from `pullPool` only. Otherwise select from effective pool.
+3. Track `dayPullCount` / `dayPushCount` using `isPull()` / `isPush()` helpers.
+
+**Helper**:
 
 ```typescript
 function getWeightForExercise(exercise: Exercise, profile: EquipmentProfile): number {
@@ -72,6 +88,43 @@ function getWeightForExercise(exercise: Exercise, profile: EquipmentProfile): nu
     case 'bodyweight': return 0;
   }
 }
+
+const isPull = (p: MovementPattern) => p === 'pull-horizontal' || p === 'pull-vertical';
+const isPush = (p: MovementPattern) => p === 'push-horizontal' || p === 'push-vertical';
 ```
 
-Both functions call `getWeightForExercise(exercise, profile)` instead of `assignWeight(exercise, profile.dumbbellWeights)`.
+## `generateWeeklyPlan` — consecutive-day guard threading (Session 2026-04-30)
+
+The existing `generateWeeklyPlan` loop gains tracking variables:
+
+```typescript
+let prevTrainingDay: DayPlan | null = null;
+let prevTrainingDayIdx: number | null = null;
+
+// Inside the ALL_DAYS loop:
+if (!trainingSet.has(day)) {
+  days[day] = { isTrainingDay: false, exercises: [] };
+  prevTrainingDay = null;   // rest day clears the guard
+  prevTrainingDayIdx = null;
+  continue;
+}
+
+const avoidMuscleGroup =
+  prevTrainingDay !== null && prevTrainingDayIdx === dayIndex - 1
+    ? dominantMuscleGroup(prevTrainingDay, exerciseMap)
+    : undefined;
+
+let dayPlan = buildTrainingDayFromPool(rand, pool, profile, avoidMuscleGroup);
+prevTrainingDay = dayPlan;
+prevTrainingDayIdx = dayIndex;
+```
+
+Where `dominantMuscleGroup` computes the mode `primaryMuscleGroup` across a day's planned exercises.
+
+## `completionStore.getSessionSummary` (new, Session 2026-04-30)
+
+```typescript
+getSessionSummary(date: string): SessionSummary
+```
+
+Derives session muscle group data from existing `ExerciseCompletion` records — no new persistence. See `research.md §12` for full implementation.
