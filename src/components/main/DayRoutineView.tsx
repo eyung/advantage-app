@@ -6,11 +6,12 @@ interface Props {
   dayPlan: DayPlan;
   dayLabel: string;
   focused: boolean;
+  isToday: boolean;
   isCompleted: (exerciseId: string) => boolean;
   onToggle: (exerciseId: string, weightKg: number, sets: number, reps: number) => void;
 }
 
-export function DayRoutineView({ dayPlan, dayLabel, focused, isCompleted, onToggle }: Props) {
+export function DayRoutineView({ dayPlan, dayLabel, focused, isToday, isCompleted, onToggle }: Props) {
   const opacity = focused ? 1 : 0.5;
   const transition = 'opacity 200ms cubic-bezier(0.2,0,0,1)';
 
@@ -120,7 +121,7 @@ export function DayRoutineView({ dayPlan, dayLabel, focused, isCompleted, onTogg
               color: focused ? 'var(--brand)' : 'var(--fg-tertiary)',
             }}
           >
-            {dayLabel}{focused ? ' · Today' : ''}
+            {dayLabel}{isToday ? ' · Today' : ''}
           </span>
         </div>
         <div
@@ -193,7 +194,7 @@ export function DayRoutineView({ dayPlan, dayLabel, focused, isCompleted, onTogg
             color: focused ? 'var(--brand)' : 'var(--fg-tertiary)',
           }}
         >
-          {dayLabel}{focused ? ' · Today' : ''}
+          {dayLabel}{isToday ? ' · Today' : ''}
         </span>
         <span
           style={{
