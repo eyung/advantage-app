@@ -11,13 +11,17 @@ interface Exercise {
   category: TennisCategory;
   equipment: 'dumbbell' | 'bodyweight' | 'resistance-band' | 'kettlebell';  // extended
   primaryMuscleGroup: 'legs' | 'chest' | 'back' | 'shoulders' | 'arms' | 'core' | 'full-body';
+  movementPattern: MovementPattern;  // NEW (Session 2026-04-30) — required field
   defaultSets: number;
   defaultReps: number;
-  goalTags?: ('aesthetics')[];  // NEW — optional secondary goal tags
+  goalTags?: ('aesthetics')[];  // optional secondary goal tags
 }
 ```
 
-**Change**: `equipment` union adds `'resistance-band'` and `'kettlebell'`. New optional `goalTags` field carries secondary goal identifiers. Backward compatible — existing exercises gain no `goalTags` field (treated as empty).
+**Changes**:
+- `equipment` union adds `'resistance-band'` and `'kettlebell'`.
+- `goalTags` field carries secondary goal identifiers. Backward compatible (treated as empty when absent).
+- `movementPattern` is a **required** field added to support pull-preference bias (FR-017) and consecutive-day guard (FR-018). All 72 existing exercises must be tagged; all new exercises must include it.
 
 ### `CustomExercise` (modified)
 
@@ -53,6 +57,40 @@ interface EquipmentProfile {
 **Migration**: v3 migration adds `kettlebellWeights: []`, `resistanceBandLevels: []`, `aestheticsDays: []`, `defaultEquipmentTypes: ['dumbbells', 'bodyweight']` to existing stored profiles.
 
 ## New Types
+
+### `MovementPattern` (Session 2026-04-30)
+
+```typescript
+type MovementPattern =
+  | 'push-horizontal'   // bench press, push-ups, chest fly
+  | 'push-vertical'     // overhead press, push press, KB press, thruster
+  | 'pull-horizontal'   // rows, face pull, band seated row, inverted row
+  | 'pull-vertical'     // band lat pulldown, band straight-arm pulldown
+  | 'hinge'             // deadlift, RDL, KB swing, clean, snatch
+  | 'squat'             // goblet squat, lunge, jump squat
+  | 'rotation'          // woodchop, Russian twist, windmill, TGU
+  | 'lateral'           // lateral shuffle, carioca, band walks
+  | 'carry'             // suitcase carry
+  | 'other';            // HIIT, isometric holds, uncategorised
+```
+
+**Pull/Push classification** used by engine bias logic:
+- "pull" = `pull-horizontal | pull-vertical`
+- "push" = `push-horizontal | push-vertical`
+
+### `SessionSummary` (Session 2026-04-30)
+
+Derived type — not persisted; computed from `ExerciseCompletion` records by `completionStore.getSessionSummary(date)`.
+
+```typescript
+interface SessionSummary {
+  date: string;                                        // ISO date (YYYY-MM-DD)
+  exerciseIds: string[];                               // IDs of completed exercises
+  muscleGroups: Exercise['primaryMuscleGroup'][];      // unique muscle groups trained
+}
+```
+
+**Purpose**: Phase 2 adaptive scheduling foundation. Enables the plan engine to query historical muscle group training without a separate persistence layer.
 
 ### `ResistanceBandLevel`
 

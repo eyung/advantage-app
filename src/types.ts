@@ -1,5 +1,17 @@
 export type DayOfWeek = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
 
+export type MovementPattern =
+  | 'push-horizontal'
+  | 'push-vertical'
+  | 'pull-horizontal'
+  | 'pull-vertical'
+  | 'hinge'
+  | 'squat'
+  | 'rotation'
+  | 'lateral'
+  | 'carry'
+  | 'other';
+
 export type TennisCategory =
   | 'lateral-agility'
   | 'rotational-power'
@@ -17,9 +29,16 @@ export interface Exercise {
   category: TennisCategory;
   equipment: 'dumbbell' | 'bodyweight' | 'resistance-band' | 'kettlebell';
   primaryMuscleGroup: 'legs' | 'chest' | 'back' | 'shoulders' | 'arms' | 'core' | 'full-body';
+  movementPattern: MovementPattern;
   defaultSets: number;
   defaultReps: number;
   goalTags?: ('aesthetics')[];
+}
+
+export interface SessionSummary {
+  date: string;
+  exerciseIds: string[];
+  muscleGroups: Exercise['primaryMuscleGroup'][];
 }
 
 export interface EquipmentProfile {
@@ -63,6 +82,7 @@ export interface CustomExercise {
   category: TennisCategory;
   equipment: 'dumbbell' | 'bodyweight';
   primaryMuscleGroup: Exercise['primaryMuscleGroup'];
+  movementPattern?: MovementPattern;
   defaultSets: number;
   defaultReps: number;
   createdAt: string;
