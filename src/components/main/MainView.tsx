@@ -99,6 +99,7 @@ export function MainView() {
                 dayPlan={plan.days[day]}
                 dayLabel={day}
                 focused={day === selectedDay}
+                isToday={day === getTodayDayOfWeek()}
                 isCompleted={(id) => isCompleted(id)}
                 onToggle={(id, wkg, sets, reps) => toggleCompletion(id, wkg, sets, reps)}
               />
