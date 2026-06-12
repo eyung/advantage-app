@@ -46,7 +46,12 @@ export function MainView() {
   if (selectedIdx < ALL_DAYS.length - 1) visibleDays.push(ALL_DAYS[selectedIdx + 1]!);
 
   return (
-    <div className="min-h-dvh flex flex-col" style={{ background: 'var(--bg-app)' }}>
+    <div className="min-h-dvh flex justify-center" style={{ background: 'var(--bg-recessed)' }}>
+    <div className="min-h-dvh flex flex-col w-full" style={{
+      maxWidth: 430,
+      background: 'var(--bg-app)',
+      boxShadow: '0 0 0 0.5px rgba(14,31,23,0.06), 0 20px 60px -16px rgba(14,31,23,0.14)',
+    }}>
       {/* Header */}
       <header
         className="flex items-center justify-between px-4 flex-shrink-0"
@@ -152,6 +157,7 @@ export function MainView() {
           );
         })}
       </nav>
+    </div>
     </div>
   );
 }

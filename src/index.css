@@ -51,7 +51,7 @@
   }
 
   body {
-    background-color: var(--bg-app);
+    background-color: var(--bg-recessed);
     color: var(--fg-primary);
     min-height: 100dvh;
   }

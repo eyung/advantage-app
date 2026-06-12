@@ -27,7 +27,7 @@ export function SetupWizard() {
       className="fixed inset-0 flex flex-col overflow-y-auto"
       style={{ background: 'var(--bg-app)' }}
     >
-      <div className="flex-1 flex flex-col max-w-md mx-auto w-full px-6 py-10 space-y-6">
+      <div className="flex-1 flex flex-col max-w-[430px] mx-auto w-full px-6 py-10 space-y-6">
         {/* Header */}
         <div className="text-center" style={{ marginBottom: 8 }}>
           <img src="/logo-mark.svg" alt="" height={56} width={56} className="mx-auto mb-4" />
