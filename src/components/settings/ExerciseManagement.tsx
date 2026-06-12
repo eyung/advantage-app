@@ -349,7 +349,14 @@ export function ExerciseManagement({ onBack }: Props) {
           onClick={() => setAddingToCategory(null)}
         >
           <div
-            style={{ width: '100%', background: 'var(--bg-surface)', borderRadius: '20px 20px 0 0', padding: 24 }}
+            style={{
+              width: '100%',
+              maxWidth: 640,
+              margin: '0 auto',
+              background: 'var(--bg-surface)',
+              borderRadius: '20px 20px 0 0',
+              padding: 24,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <AddExerciseForm

@@ -1,6 +1,6 @@
 import { useEquipment } from './hooks/useEquipment';
 import { SetupWizard } from './components/setup/SetupWizard';
-import { MainView } from './components/main/MainView';
+import { AppShell } from './components/shell/AppShell';
 
 export default function App() {
   const { isConfigured } = useEquipment();
@@ -9,5 +9,5 @@ export default function App() {
     return <SetupWizard />;
   }
 
-  return <MainView />;
+  return <AppShell />;
 }

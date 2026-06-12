@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const KEYS = {
   schemaVersion: 'advantage_schema_version',
@@ -7,6 +7,7 @@ export const KEYS = {
   customisation: 'advantage_customisation',
   plan: 'advantage_plan',
   sessionEquipment: 'advantage_session_equipment',
+  gear: 'advantage_gear',
 } as const;
 
 export function getStoredSchemaVersion(): number {
