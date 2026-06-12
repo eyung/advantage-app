@@ -30,6 +30,12 @@ export function getDayOfWeekIndex(date: Date): number {
   return (date.getDay() + 6) % 7;
 }
 
+const DAY_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+export function getTodayDayOfWeek(): (typeof DAY_ORDER)[number] {
+  return DAY_ORDER[getDayOfWeekIndex(new Date())]!;
+}
+
 export function formatDisplayDate(iso: string): string {
   const date = new Date(iso + 'T00:00:00');
   return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });

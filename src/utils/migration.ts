@@ -49,6 +49,15 @@ const migrations: Record<number, MigrationFn> = {
     }
     return data;
   },
+  4: (data) => {
+    if (!data[KEYS.gear]) {
+      data[KEYS.gear] = JSON.stringify({
+        state: { rackets: [], restrings: [] },
+        version: 0,
+      });
+    }
+    return data;
+  },
 };
 
 export function runMigrationsIfNeeded(): void {

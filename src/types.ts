@@ -95,6 +95,32 @@ export interface CustomisationProfile {
   customisationVersion: number;
 }
 
+export interface Racket {
+  id: string;
+  brand: string;
+  model: string;
+  weightGrams?: number;
+  headSizeSqIn?: number;
+  gripSize?: string;
+  status: 'active' | 'retired';
+  notes?: string;
+  createdAt: string;
+}
+
+export interface RestringRecord {
+  id: string;
+  racketId: string;
+  /** ISO date YYYY-MM-DD; may be backdated */
+  date: string;
+  mainString: string;
+  mainTensionLbs: number;
+  crossString?: string;
+  crossTensionLbs?: number;
+  stringer?: string;
+  costDollars?: number;
+  notes?: string;
+}
+
 export interface ExerciseCompletion {
   id: string;
   exerciseId: string;

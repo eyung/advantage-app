@@ -25,7 +25,7 @@ export function SetupWizard() {
   return (
     <div
       className="fixed inset-0 flex flex-col overflow-y-auto"
-      style={{ background: 'var(--bg-app)' }}
+      style={{ background: 'var(--bg-recessed)' }}
     >
       <div className="flex-1 flex flex-col max-w-[430px] mx-auto w-full px-6 py-10 space-y-6">
         {/* Header */}

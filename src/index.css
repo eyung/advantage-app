@@ -62,10 +62,6 @@
 }
 
 @layer components {
-  .page-container {
-    @apply max-w-lg mx-auto px-4 pb-24 pt-4;
-  }
-
   .nav-safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
